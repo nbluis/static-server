@@ -8,7 +8,7 @@ I intend to turn this project in a npm package to simplify local executions anyt
 
 ## Getting started (at now)
 * [Install node.js](http://nodejs.org/download/)
-* Clone it `git clone git://github.com/nbluis/static-server`
+* Clone it `git clone git@github.com:nbluis/static-server.git`
 * Go to the project folder `cd static-server`
 * Just run `node server.js`
 
