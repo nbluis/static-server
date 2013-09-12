@@ -1,6 +1,6 @@
 #Node static server
 
-A simple static server writen in [node.js](nodejs.org).
+A simple static server written in [node.js](nodejs.org).
 
 ## About
 This project is under construction.
