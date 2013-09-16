@@ -1,16 +1,11 @@
 #Node static server
+A simple http server to serve static resource files from a local directory.
 
-A simple static server written in [node.js](nodejs.org).
-
-## About
-This project is under construction.
-I intend to turn this project in a npm package to simplify local executions anytime, in any folder without cloning.
-
-## Getting started (at now)
+## Getting started
 * [Install node.js](http://nodejs.org/download/)
-* Clone it `git clone git@github.com:nbluis/static-server.git`
-* Go to the project folder `cd static-server`
-* Just run `node server.js`
+* Install npm package globally `npm -g install static-server`
+* Go to the folder you want to serve
+* Run the server `static-server .`
 
 ##FAQ
 * _Can I use this project in production environments?_ **Obviously not.**
@@ -18,22 +13,4 @@ I intend to turn this project in a npm package to simplify local executions anyt
 * _This server is ready to receive thousands of requests?_ **I hope not.**
 
 ## License
-The MIT License (MIT)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+[The MIT License (MIT)](http://creativecommons.org/licenses/MIT/)

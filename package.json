@@ -10,5 +10,12 @@
   "repository": {
       "type": "git",
       "url": "git@github.com:nbluis/static-server.git"
+  },
+  "bin": {
+    "static-server": "./bin/static-server"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "http://creativecommons.org/licenses/MIT/"
   }
 }
