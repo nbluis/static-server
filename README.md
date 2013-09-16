@@ -12,6 +12,11 @@ I intend to turn this project in a npm package to simplify local executions anyt
 * Go to the project folder `cd static-server`
 * Just run `node server.js`
 
+##FAQ
+* _Can I use this project in production environments?_ **Obviously not.**
+* _This server can run php, ruby, python or any other cgi script?_ **Absolutely not.**
+* _This server is ready to receive thousands of requests?_ **I hope not.**
+
 ## License
 The MIT License (MIT)
 
