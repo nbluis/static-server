@@ -9,8 +9,8 @@ A simple http server to serve static resource files from a local directory.
 
 ##FAQ
 * _Can I use this project in production environments?_ **Obviously not.**
-* _This server can run php, ruby, python or any other cgi script?_ **Absolutely not.**
-* _This server is ready to receive thousands of requests?_ **I hope not.**
+* _Can this server run php, ruby, python or any other cgi script?_ **Absolutely not.**
+* _Is this server ready to receive thousands of requests?_ **I hope not.**
 
 ## License
 [The MIT License (MIT)](http://creativecommons.org/licenses/MIT/)
