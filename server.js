@@ -4,12 +4,13 @@ var http            = require("http"),
     path            = require("path"),
     fs              = require("fs"),
     defaultFileName = 'index.html',
-    port            = process.argv[2] || 9080;
+    startDir        = process.argv[2] || '.';
+    port            = process.argv[3] || 9080;
 
 http.createServer(function(request, response) {
 
   var uri = url.parse(request.url).pathname,
-      fileName = path.join(process.cwd(), uri);
+      fileName = path.join(startDir, uri);
 
   function writeFile(fullFilePath) {
     console.log('Serving file: ' + fullFilePath);

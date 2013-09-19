@@ -12,7 +12,7 @@
       "url": "git@github.com:nbluis/static-server.git"
   },
   "bin": {
-    "static-server": "./bin/static-server"
+    "static-server": "./bin/static-server.js"
   },
   "license": {
     "type": "MIT",
