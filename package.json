@@ -3,16 +3,28 @@
   "description": "A simple http server to serve static resource files from a local directory.",
   "version": "1.0.0",
   "author": "Eduardo Bohrer <nbluisrs@gmail.com>",
-  "keywords": ["static", "server", "local", "assets"],
-  "dependencies": {},
+  "keywords": [
+    "static",
+    "server",
+    "local",
+    "assets"
+  ],
   "main": "./server.js",
-  "engines": { "node": ">= 0.10.0" },
   "repository": {
-      "type": "git",
-      "url": "git@github.com:nbluis/static-server.git"
+    "type": "git",
+    "url": "git@github.com:nbluis/static-server.git"
   },
   "bin": {
     "static-server": "./bin/static-server.js"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "dependencies": {
+    "chalk": "^0.5.1",
+    "commander": "^2.3.0",
+    "file-size": "0.0.5",
+    "mime": "^1.2.11"
   },
   "license": {
     "type": "MIT",
