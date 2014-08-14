@@ -1,6 +1,8 @@
 
 const DEFAULT_PORT = 9080;
+const DEFAULT_INDEX = 'index.html';
 const DEFAULT_FOLLOW_SYMLINKS = false;
+const DEFAULT_DEBUG = false;
 
 const DEFAULT_STATUS_OK = 200;
 const DEFAULT_STATUS_ERR = 500;
@@ -25,9 +27,9 @@ var program = require('commander')
   .version('1.0.0')
   .usage('[options] <root_path>')
   .option('-p, --port <n>', 'the port to listen to for incoming HTTP connections', DEFAULT_PORT)
-  .option('-i, --index <filename>', 'the default index file if not specified', 'index.html')
-  .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', false)
-  .option('-d, --debug', 'enable to show error messages', false)
+  .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
+  .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
+  .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
   .parse(process.argv);
 ;
 var server;
