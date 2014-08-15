@@ -22,7 +22,6 @@ var url     = require("url");
 var mime    = require('mime');
 var path    = require("path");
 var fs      = require("fs");
-//var buffer  = require('buffer')
 var fsize   = require('file-size');
 var chalk   = require('chalk');
 var slice   = Array.prototype.slice;
@@ -184,7 +183,7 @@ function getFileStats(files, callback) {
       next(files.shift(), index + 1);
     } else if (dirFound) {
       // if a directory was found at some point, return it and ignore the error
-      callback(null, dirStat, dirFound);
+      callback(null, dirStat, dirFound, dirIndex);
     } else {
       callback(err || new Error('File not found'));
     }
@@ -256,7 +255,7 @@ function validateClientCache(req, res, stat) {
     });
 
     res.status = DEFAULT_STATUS_NOT_MODIFIED;
-    
+
     res.writeHead(res.status, res.headers);
     res.end();
 
@@ -283,11 +282,28 @@ function sendError(req, res, error, status, message) {
   status = status || res.status || DEFAULT_STATUS_ERR
   message = message || http.STATUS_CODES[status];
 
-  res.headers['Content-Type'] = mime.lookup('text');
+  if (status >= 400) {
+    // ERR responses should not contain entity headers
+    [
+      'Content-Encoding',
+      'Content-Language',
+      'Content-Length',
+      'Content-Location',
+      'Content-MD5',
+      'Content-Range',
+      'Etag',
+      'Expires',
+      'Last-Modified'
+    ].forEach(function(entityHeader) {
+        delete res.headers[entityHeader];
+    });
 
-  res.writeHead(status, res.headers);
-  res.write(message);
-  res.end();
+    res.headers['Content-Type'] = mime.lookup('text');
+
+    res.writeHead(status, res.headers);
+    res.write(message);
+    res.end();
+  }
 
   console.log(chalk.gray('-->'), chalk.red(status, message), req.path, '(' + res.elapsedTime + ')');
 
@@ -309,10 +325,9 @@ will be read and the error will be sent to stderr
 @param file {String}       the absolute file path
 */
 function sendFile(req, res, stat, file) {
+  var headersSent = false;
   var relFile;
   var nrmFile;
-
-  res.status = DEFAULT_STATUS_OK;
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
@@ -324,9 +339,6 @@ function sendFile(req, res, stat, file) {
     return;  // abort
   }
 
-  // TODO : fix this, if the stream encounters an error, headers will be sent twice!
-  res.writeHead(DEFAULT_STATUS_OK, res.headers);
-
   relFile = path.relative(program.rootPath, file);
   nrmFile = path.normalize(req.path.substring(1));
 
@@ -334,8 +346,17 @@ function sendFile(req, res, stat, file) {
     flags: 'r',
     mode: 0666
   }).on('close', function () {
+    res.end();
     console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
   }).on('error', function (err) {
-    sendError(res, err);
-  }).pipe(res);
+    sendError(req, res, err);
+  }).on('data', function (chunk) {
+    if (!headersSent) {
+      res.status = DEFAULT_STATUS_OK;
+      res.writeHead(DEFAULT_STATUS_OK, res.headers);
+      headersSent = true;
+    }
+    res.write(chunk);
+  });
+
 };
