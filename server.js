@@ -42,15 +42,12 @@ program
 
 program.rootPath = program.args[0] || process.cwd();
 
-
 initTerminateHandlers();
 createServer();
 
-
-
 /**
-Create the server
-*/
+ * Create the server
+ */
 function createServer() {
   server = http.createServer(function(req, res) {
     var uri = req.path = url.parse(req.url).pathname;
@@ -103,8 +100,8 @@ function createServer() {
 
 
 /**
-Prepare the 'exit' handler for the program termination
-*/
+ * Prepare the 'exit' handler for the program termination
+ */
 function initTerminateHandlers() {
   var readLine;
 
@@ -145,9 +142,10 @@ Check that path is valid so we don't access invalid resources
 */
 function validPath(file) {
   var resolvedPath = path.resolve(program.rootPath, file);
+  var rootPath = path.resolve(program.rootPath);
 
   // only if we are still in the rootPath of the static site
-  return resolvedPath.indexOf(program.rootPath) === 0;
+  return resolvedPath.indexOf(rootPath) === 0;
 }
 
 
@@ -341,10 +339,8 @@ function sendFile(req, res, stat, file) {
 
   relFile = path.relative(program.rootPath, file);
   nrmFile = path.normalize(req.path.substring(1));
-
   fs.createReadStream(file, {
     flags: 'r',
-    mode: 0666
   }).on('close', function () {
     res.end();
     console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
