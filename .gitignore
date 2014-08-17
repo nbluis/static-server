@@ -6,6 +6,8 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.swp
+*.tgz
 
 npm-debug.log
 bower_components
