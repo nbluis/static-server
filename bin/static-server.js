@@ -47,23 +47,23 @@ server.on('request', function (req, res) {
   console.log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), req.path);
 });
 
-server.on('symbolicLink', function (file, link) {
-  console.log(chalk.cyan('---'), '"' + path.relative(server.rootPath, file) + '"', chalk.magenta('>'), '"' + path.relative(server.rootPath, link) + '"');
+server.on('symbolicLink', function (link, file) {
+  console.log(chalk.cyan('---'), '"' + path.relative(server.rootPath, link) + '"', chalk.magenta('>'), '"' + path.relative(server.rootPath, file) + '"');
 });
 
-server.on('response', function (req, res, err, stat, file) {
+server.on('response', function (req, res, err, file, stat) {
   var relFile;
   var nrmFile;
 
   if (res.status >= 400) {
-    console.log(chalk.gray('-->'), chalk.red(status, message), req.path, '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.red(status, message), req.path, '(' + req.elapsedTime + ')');
   } else if (file) {
     relFile = path.relative(server.rootPath, file);
     nrmFile = path.normalize(req.path.substring(1));
 
-    console.log(chalk.gray('-->'), chalk.green(res.status, StaticServer.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.green(res.status, StaticServer.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + req.elapsedTime + ')');
   } else {
-    console.log(chalk.gray('-->'), chalk.green.dim(res.status, StaticServer.STATUS_CODES[res.status]), req.path, '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.green.dim(res.status, StaticServer.STATUS_CODES[res.status]), req.path, '(' + req.elapsedTime + ')');
   }
 
   if (err && server.debug) {
@@ -95,7 +95,7 @@ function initTerminateHandlers() {
   process.on('exit', function () {
     if (server) {
       console.log(chalk.blue('*'), 'Shutting down server');
-      server.close();
+      server.stop();
     }
     console.log();  // extra blank line
   });

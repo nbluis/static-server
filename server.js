@@ -87,7 +87,7 @@ StaticServer.prototype.start = function start(callback) {
     var timestamp = process.hrtime();
 
     // add a property to get the elapsed time since the request was issued
-    Object.defineProperty(res, 'elapsedTime', {
+    Object.defineProperty(req, 'elapsedTime', {
       get: function getElapsedTime() {
         var elapsed = process.hrtime(timestamp);
         return (elapsed[0] ? elapsed[0] + 's ' : '') + (elapsed[1] / 1000000).toFixed(TIME_MS_PRECISION) + 'ms';
@@ -185,12 +185,12 @@ function getFileStats(server, files, callback) {
         checkNext(err, index);
       } else if (stat.isSymbolicLink()) {
         if (server.followSymlink) {
-          fs.readlink(file, function (err, link) {
+          fs.readlink(file, function (err, fileRef) {
             if (err) {
               checkNext(err, index);
             } else {
-              server.emit('symbolicLInk', file, link);
-              next(link, index);
+              server.emit('symbolicLInk', fileRef, link);
+              next(fileRef, index);
             }
           });
         } else {
@@ -330,7 +330,7 @@ function sendFile(server, req, res, stat, file) {
     flags: 'r'
   }).on('close', function () {
     res.end();
-    server.emit('response', req, res, null, stat, file);
+    server.emit('response', req, res, null, file, stat);
   }).on('error', function (err) {
     sendError(server, req, res, err);
   }).on('data', function (chunk) {

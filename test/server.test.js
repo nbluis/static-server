@@ -39,6 +39,30 @@ describe('StaticServer test', function () {
     testServer.should.have.ownProperty('_socket');
   });
 
+  it('should handle 404 requests', function (done) {
+    request(testServer._socket)
+      .get('/')
+      .expect(403)
+      .end(done)
+    ;
+  });
+
+  it('should handle index', function (done) {
+    var oldIndex = testServer.index;
+    testServer.index = 'test.html';
+
+    request(testServer._socket)
+      .get('/')
+      .expect(200)
+      .end(function (err) {
+        testServer.index = oldIndex;
+
+        done(err);
+      })
+    ;
+  });
+
+
   describe('testing content types', function () {
 
     function testFixture(testFile, contentType, done) {
@@ -75,27 +99,10 @@ describe('StaticServer test', function () {
 
   });
 
-  it('should handle 404 requests', function (done) {
-    request(testServer._socket)
-      .get('/')
-      .expect(403)
-      .end(done)
-    ;
+  describe('Symbolic links', function () {
+    it('should handle fail');
+    it('should follow');
   });
 
-  it('should handle index', function (done) {
-    var oldIndex = testServer.index;
-    testServer.index = 'test.html';
-
-    request(testServer._socket)
-      .get('/')
-      .expect(200)
-      .end(function (err) {
-        testServer.index = oldIndex;
-
-        done(err);
-      })
-    ;
-  });
 
 });
