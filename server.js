@@ -1,9 +1,4 @@
 
-const DEFAULT_PORT = 9080;
-const DEFAULT_INDEX = 'index.html';
-const DEFAULT_FOLLOW_SYMLINKS = false;
-const DEFAULT_DEBUG = false;
-
 const DEFAULT_STATUS_OK = 200;
 const DEFAULT_STATUS_NOT_MODIFIED = 304;
 const DEFAULT_STATUS_ERR = 500;
@@ -16,45 +11,44 @@ const VALID_HTTP_METHOD = 'GET';
 const TIME_MS_PRECISION = 3;
 
 
-var util    = require('util');
-var http    = require("http");
-var url     = require("url");
-var mime    = require('mime');
-var path    = require("path");
-var fs      = require("fs");
-var fsize   = require('file-size');
-var chalk   = require('chalk');
-var slice   = Array.prototype.slice;
-var program = require('commander');
-var pkg     = require(path.join(__dirname, 'package.json'));
-var server;
-
-
-program
-  .version(pkg.name + '@' + pkg.version)
-  .usage('[options] <root_path>')
-  .option('-p, --port <n>', 'the port to listen to for incoming HTTP connections', DEFAULT_PORT)
-  .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
-  .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
-  .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
-  .parse(process.argv);
-;
-
-program.rootPath = program.args[0] || process.cwd();
-
-
-initTerminateHandlers();
-createServer();
-
+var EventEmitter = require('events').EventEmitter;
+var util         = require('util');
+var http         = require("http");
+var url          = require("url");
+var mime         = require('mime');
+var path         = require("path");
+var fs           = require("fs");
+var slice        = Array.prototype.slice;
 
 
 /**
-Create the server
+Exposes the StaticServer class
 */
-function createServer() {
-  server = http.createServer(function(req, res) {
+module.exports = StaticServer;
+
+
+
+function StaticServer(options) {
+  options = options || {};
+
+  this.name = options.name;
+  this.host = options.host;
+  this.port = options.port;
+  this.rootPath = options.rootPath;
+  this.followSymlink = options.followSymlink;
+  this.index = options.index;
+  this.debug = options.debug;
+  this.STATUS_CODES = http.STATUS_CODES;
+}
+util.inherits(StaticServer, EventEmitter);
+
+
+StaticServer.prototype.start = function start(callback) {
+  var server = this;
+
+  this._socket = http.createServer(function(req, res) {
     var uri = req.path = url.parse(req.url).pathname;
-    var filename = path.join(program.rootPath, uri);
+    var filename = path.join(server.rootPath, uri);
     var timestamp = process.hrtime();
 
     // add a property to get the elapsed time since the request was issued
@@ -65,89 +59,56 @@ function createServer() {
       }
     });
 
+    server.emit('request', req);
+
     res.headers = {
-      'X-Powered-By': pkg.name
+      'X-Powered-By': server.name
     };
 
-    console.log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), uri);
-
     if (req.method !== VALID_HTTP_METHOD) {
-      return sendError(req, res, null, DEFAULT_STATUS_INVALID_METHOD);
-    } else if (!validPath(filename)) {
-      return sendError(req, res, null, DEFAULT_STATUS_FORBIDDEN);
+      return sendError(server, req, res, null, DEFAULT_STATUS_INVALID_METHOD);
+    } else if (!validPath(server.rootPath, filename)) {
+      return sendError(server, req, res, null, DEFAULT_STATUS_FORBIDDEN);
     }
 
-    getFileStats(filename, path.join(filename, program.index), function (err, stat, file, index) {
+    getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        sendError(req, res, null, DEFAULT_STATUS_FILE_NOT_FOUND);
+        sendError(server, req, res, null, DEFAULT_STATUS_FILE_NOT_FOUND);
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here
         //
-        sendError(req, res, null, DEFAULT_STATUS_FORBIDDEN);
+        sendError(server, req, res, null, DEFAULT_STATUS_FORBIDDEN);
       } else {
-        sendFile(req, res, stat, file);
+        sendFile(server, req, res, stat, file);
       }
     });
 
   });
 
-  server.listen(program.port);
-
-  console.log(chalk.blue('*'), 'Static server successfully started.');
-  console.log(chalk.blue('*'), 'Listening on port:', chalk.cyan(program.port));
-  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'to shutdown.');
-
-  return server;
+  this._socket.listen(this.port, this.host, callback);
 }
 
 
-/**
-Prepare the 'exit' handler for the program termination
-*/
-function initTerminateHandlers() {
-  var readLine;
-
-  if (process.platform === "win32"){
-    readLine = require("readline");
-
-    readLine.createInterface ({
-      input: process.stdin,
-      output: process.stdout
-    }).on("SIGINT", function () {
-      process.emit("SIGINT");
-    });
+StaticServer.prototype.stop = function stop() {
+  if (this._socket) {
+    this._socket.close();
+    this._socket = null;
   }
-
-  // handle INTERRUPT (CTRL+C) and TERM/KILL signals
-  process.on('exit', function () {
-    if (server) {
-      console.log(chalk.blue('*'), 'Shutting down server');
-      server.close();
-    }
-    console.log();  // extra blank line
-  });
-  process.on('SIGINT', function () {
-    console.log(chalk.blue.bold('!'), chalk.yellow.bold('SIGINT'), 'detected');
-    process.exit();
-  });
-  process.on('SIGTERM', function () {
-    console.log(chalk.blue.bold('!'), chalk.yellow.bold('SIGTERM'), 'detected');
-    process.exit(0);
-  });
 }
 
 
 /**
 Check that path is valid so we don't access invalid resources
 
+@param rootPath {String}    the server root path
 @param file {String}        the path to validate
 */
-function validPath(file) {
-  var resolvedPath = path.resolve(program.rootPath, file);
+function validPath(rootPath, file) {
+  var resolvedPath = path.resolve(rootPath, file);
 
   // only if we are still in the rootPath of the static site
-  return resolvedPath.indexOf(program.rootPath) === 0;
+  return resolvedPath.indexOf(rootPath) === 0;
 }
 
 
@@ -155,28 +116,20 @@ function validPath(file) {
 Get stats for the given file(s). The function will return the stats for the
 first valid (i.e. found) file or directory.
 
-    getFile('file1', callback);
-    getFile('file1', 'file2', ..., callback);
-    getFile(['file1', 'file2'], callback);
+    getFile(server, ['file1', 'file2'], callback);
 
 The callback function receives four arguments; an error if any, a stats object,
 the file name matching the stats found, and the actual index of the file from
 the provided list of files.
 
-@param files {Array|String}     a file, or list of files
+@param server {StaticServer}    the StaticServer instance
+@param files {Array}            list of files
 @param callback {Function}      a callback function
 */
-function getFileStats(files, callback) {
+function getFileStats(server, files, callback) {
   var dirFound;
   var dirStat;
   var dirIndex;
-
-  if (arguments.length > 2) {
-    files = slice.call(arguments, 0, arguments.length - 1);
-    callback = arguments[arguments.length - 1];
-  } else if (!Array.isArray(file)) {
-    files = [files];
-  }
 
   function checkNext(err, index) {
     if (files.length) {
@@ -194,12 +147,12 @@ function getFileStats(files, callback) {
       if (err) {
         checkNext(err, index);
       } else if (stat.isSymbolicLink()) {
-        if (program.followSymlink) {
+        if (server.followSymlink) {
           fs.readlink(file, function (err, link) {
             if (err) {
               checkNext(err, index);
             } else {
-              console.log(chalk.cyan('---'), '"' + path.relative(program.rootPath, file) + '"', chalk.magenta('>'), '"' + path.relative(program.rootPath, link) + '"');
+              server.emit('symbolicLInk', file, link);
               next(link, index);
             }
           });
@@ -259,7 +212,7 @@ function validateClientCache(req, res, stat) {
     res.writeHead(res.status, res.headers);
     res.end();
 
-    console.log(chalk.gray('-->'), chalk.green.dim(res.status, http.STATUS_CODES[res.status]), req.path, '(' + res.elapsedTime + ')');
+    server.emit('response', req, res);
 
     return true;
   } else {
@@ -273,12 +226,14 @@ Send error back to the client. If `status` is not specified, a value
 of 500 is used. If `message` is not specified, the default message for
 the given status is returned.
 
-@param req {Object}         the request object
-@param res {Object}         the response object
-@param status {Number}      the status (default 500)
-@param message {String}     the status message (optional)
+@param server {StaticServer} the server instance
+@param req {Object}          the request object
+@param res {Object}          the response object
+@param err {Object}          an Error object, if any
+@param status {Number}       the status (default 500)
+@param message {String}      the status message (optional)
 */
-function sendError(req, res, error, status, message) {
+function sendError(server, req, res, err, status, message) {
   status = status || res.status || DEFAULT_STATUS_ERR
   message = message || http.STATUS_CODES[status];
 
@@ -298,6 +253,7 @@ function sendError(req, res, error, status, message) {
         delete res.headers[entityHeader];
     });
 
+    res.status = status;
     res.headers['Content-Type'] = mime.lookup('text');
 
     res.writeHead(status, res.headers);
@@ -305,12 +261,7 @@ function sendError(req, res, error, status, message) {
     res.end();
   }
 
-  console.log(chalk.gray('-->'), chalk.red(status, message), req.path, '(' + res.elapsedTime + ')');
-
-  if (error && program.debug) {
-    console.error(error.stack || error.message || error);
-  }
-
+  server.emit('response', req, res, err);
 }
 
 
@@ -319,15 +270,14 @@ Send a file back at the client. If the file is not found, an error 404
 will be returned. If the file cannot be read, for any reason, an error 500
 will be read and the error will be sent to stderr
 
-@param req {Object}        the request object
-@param res {Object}        the response object
-@param stat {Object}       the actual file stat
-@param file {String}       the absolute file path
+@param server {StaticServer} the server instance
+@param req {Object}          the request object
+@param res {Object}          the response object
+@param stat {Object}         the actual file stat
+@param file {String}         the absolute file path
 */
-function sendFile(req, res, stat, file) {
+function sendFile(server, req, res, stat, file) {
   var headersSent = false;
-  var relFile;
-  var nrmFile;
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
@@ -339,17 +289,16 @@ function sendFile(req, res, stat, file) {
     return;  // abort
   }
 
-  relFile = path.relative(program.rootPath, file);
-  nrmFile = path.normalize(req.path.substring(1));
-
   fs.createReadStream(file, {
     flags: 'r',
     mode: 0666
   }).on('close', function () {
     res.end();
-    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
+
+    server.emit('response', req, res, null, stat, file);
+
   }).on('error', function (err) {
-    sendError(req, res, err);
+    sendError(server, req, res, err);
   }).on('data', function (chunk) {
     if (!headersSent) {
       res.status = DEFAULT_STATUS_OK;
