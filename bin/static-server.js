@@ -61,9 +61,9 @@ server.on('response', function (req, res, err, stat, file) {
     relFile = path.relative(server.rootPath, file);
     nrmFile = path.normalize(req.path.substring(1));
 
-    console.log(chalk.gray('-->'), chalk.green(res.status, server.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.green(res.status, StaticServer.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
   } else {
-    console.log(chalk.gray('-->'), chalk.green.dim(res.status, server.STATUS_CODES[res.status]), req.path, '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.green.dim(res.status, StaticServer.STATUS_CODES[res.status]), req.path, '(' + res.elapsedTime + ')');
   }
 
   if (err && server.debug) {

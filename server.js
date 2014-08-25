@@ -1,4 +1,6 @@
 
+const DEFAULT_INDEX = 'index.html';
+
 const DEFAULT_STATUS_OK = 200;
 const DEFAULT_STATUS_NOT_MODIFIED = 304;
 const DEFAULT_STATUS_ERR = 500;
@@ -27,22 +29,55 @@ Exposes the StaticServer class
 module.exports = StaticServer;
 
 
+/**
+Create a new instance of StaticServer class
 
+Options are :
+   - name          the server name, what will be sent as "X-Powered-by"
+   - host          the host interface where the server will listen to. If not specified,
+                   the server will listen on any networking interfaces
+   - port          the listening port number
+   - rootPath      the serving root path. Any file above that path will be denied
+   - followSymlink true to follow any symbolic link, false to forbid
+   - index         the default index file to server for a directory (default 'index.html')
+
+@param options {Object}
+*/
 function StaticServer(options) {
   options = options || {};
+
+  if (!options.rootPath) {
+    throw new Error('Root path not specified');
+  }
 
   this.name = options.name;
   this.host = options.host;
   this.port = options.port;
-  this.rootPath = options.rootPath;
-  this.followSymlink = options.followSymlink;
-  this.index = options.index;
-  this.debug = options.debug;
-  this.STATUS_CODES = http.STATUS_CODES;
+  this.rootPath = path.resolve(options.rootPath);
+  this.followSymlink = !!options.followSymlink;
+  this.index = options.index || DEFAULT_INDEX;
+
+  Object.defineProperty(this, '_socket', {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value: null
+  });
+
 }
 util.inherits(StaticServer, EventEmitter);
 
+/**
+Expose the http.STATUS_CODES object
+*/
+StaticServer.STATUS_CODES = http.STATUS_CODES;
 
+
+/**
+Start listening on the given host:port
+
+@param callback {Function}    the function to call once the server is ready
+*/
 StaticServer.prototype.start = function start(callback) {
   var server = this;
 
@@ -59,11 +94,12 @@ StaticServer.prototype.start = function start(callback) {
       }
     });
 
-    server.emit('request', req);
+    res.headers = {};
+    if (server.name) {
+      res.headers['X-Powered-By'] = server.name;
+    }
 
-    res.headers = {
-      'X-Powered-By': server.name
-    };
+    server.emit('request', req);
 
     if (req.method !== VALID_HTTP_METHOD) {
       return sendError(server, req, res, null, DEFAULT_STATUS_INVALID_METHOD);
@@ -84,12 +120,13 @@ StaticServer.prototype.start = function start(callback) {
       }
     });
 
-  });
-
-  this._socket.listen(this.port, this.host, callback);
+  }).listen(this.port, this.host, callback);
 }
 
 
+/**
+Stop listening
+*/
 StaticServer.prototype.stop = function stop() {
   if (this._socket) {
     this._socket.close();
@@ -290,13 +327,10 @@ function sendFile(server, req, res, stat, file) {
   }
 
   fs.createReadStream(file, {
-    flags: 'r',
-    mode: 0666
+    flags: 'r'
   }).on('close', function () {
     res.end();
-
     server.emit('response', req, res, null, stat, file);
-
   }).on('error', function (err) {
     sendError(server, req, res, err);
   }).on('data', function (chunk) {

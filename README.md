@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/nbluis/static-server.svg?branch=master)](http://travis-ci.org/nbluis/static-server)
+
 #Node static server
 A simple http server to serve static resource files from a local directory.
 
