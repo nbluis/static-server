@@ -21,7 +21,7 @@ describe('StaticServer test', function () {
   });
 
   it('should fail if rootPath is unspecified', function () {
-    //!function () { new Server(); }.should.throw('Root path not specified');
+    !function () { new Server(); }.should.throw('Root path not specified');
   })
 
   it('should expose the http STATUS_CODES object', function () {
@@ -41,9 +41,7 @@ describe('StaticServer test', function () {
 
   describe('testing content types', function () {
 
-    it('should handle text/html', function (done) {
-      var testFile = 'test.html';
-
+    function testFixture(testFile, contentType, done) {
       fs.readFile(path.join(serverOptions.rootPath, testFile), 'UTF-8', function(err, fileContent) {
         if (err) {
           return done(err);
@@ -52,11 +50,27 @@ describe('StaticServer test', function () {
         request(testServer._socket)
           .get('/' + testFile)
           .expect(200)
-          .expect('Content-Type', /html/)
+          .expect('Content-Type', contentType)
           .expect(fileContent)
           .end(done)
         ;
       });
+    }
+
+    it('should handle HTML', function (done) {
+      testFixture('test.html', /html/, done);
+    });
+
+    it('should handle JavaScript', function (done) {
+      testFixture('test.js', /javascript/, done);
+    });
+
+    it('should handle PNG', function (done) {
+      testFixture('test.png', 'image/png', done);
+    });
+
+    it('should handle JPG', function (done) {
+      testFixture('test.jpg', 'image/jpeg', done);
     });
 
   });
@@ -66,6 +80,21 @@ describe('StaticServer test', function () {
       .get('/')
       .expect(403)
       .end(done)
+    ;
+  });
+
+  it('should handle index', function (done) {
+    var oldIndex = testServer.index;
+    testServer.index = 'test.html';
+
+    request(testServer._socket)
+      .get('/')
+      .expect(200)
+      .end(function (err) {
+        testServer.index = oldIndex;
+
+        done(err);
+      })
     ;
   });
 
