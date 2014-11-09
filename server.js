@@ -11,7 +11,7 @@ const DEFAULT_STATUS_FORBIDDEN = 403;
 const DEFAULT_STATUS_FILE_NOT_FOUND = 404;
 const DEFAULT_STATUS_INVALID_METHOD = 405;
 
-const VALID_HTTP_METHOD = 'GET';
+const VALID_HTTP_METHODS = ['GET', 'HEAD'];
 
 const TIME_MS_PRECISION = 3;
 
@@ -68,7 +68,7 @@ function createServer() {
 
     console.log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), uri);
 
-    if (req.method !== VALID_HTTP_METHOD) {
+    if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
       return sendError(req, res, null, DEFAULT_STATUS_INVALID_METHOD);
     } else if (!validPath(filename)) {
       return sendError(req, res, null, DEFAULT_STATUS_FORBIDDEN);
@@ -332,6 +332,15 @@ function sendFile(req, res, stat, file) {
   res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
   res.headers['Content-Type']   = mime.lookup(file);
   res.headers['Content-Length'] = stat.size;
+
+  // return only headers if request method is HEAD
+  if (req.method === 'HEAD') {
+    res.status = DEFAULT_STATUS_OK;
+    res.writeHead(DEFAULT_STATUS_OK, res.headers);
+    res.end();
+    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
+    return;
+  }
 
   if (validateClientCache(req, res, stat, file)) {
     return;  // abort
