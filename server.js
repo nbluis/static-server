@@ -10,8 +10,9 @@ const DEFAULT_STATUS_ERR = 500;
 const DEFAULT_STATUS_FORBIDDEN = 403;
 const DEFAULT_STATUS_FILE_NOT_FOUND = 404;
 const DEFAULT_STATUS_INVALID_METHOD = 405;
+const DEFAULT_STATUS_REQUEST_RANGE_NOT_SATISFIABLE = 416;
 
-const VALID_HTTP_METHOD = 'GET';
+const VALID_HTTP_METHODS = ['GET', 'HEAD'];
 
 const TIME_MS_PRECISION = 3;
 
@@ -38,7 +39,6 @@ program
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
   .parse(process.argv);
-;
 
 program.rootPath = program.args[0] || process.cwd();
 
@@ -68,7 +68,7 @@ function createServer() {
 
     console.log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), uri);
 
-    if (req.method !== VALID_HTTP_METHOD) {
+    if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
       return sendError(req, res, null, DEFAULT_STATUS_INVALID_METHOD);
     } else if (!validPath(filename)) {
       return sendError(req, res, null, DEFAULT_STATUS_FORBIDDEN);
@@ -277,7 +277,7 @@ the given status is returned.
 @param message {String}     the status message (optional)
 */
 function sendError(req, res, error, status, message) {
-  status = status || res.status || DEFAULT_STATUS_ERR
+  status = status || res.status || DEFAULT_STATUS_ERR;
   message = message || http.STATUS_CODES[status];
 
   if (status >= 400) {
@@ -326,12 +326,45 @@ function sendFile(req, res, stat, file) {
   var headersSent = false;
   var relFile;
   var nrmFile;
+  var range, start, end;
+  var streamOptions = {flags: 'r'};
+  var size = stat.size;
+
+  // support range headers
+  if (req.headers.range) {
+    range = req.headers.range.split('-').map(Number);
+    start = range[0];
+    end = range[1];
+
+    // check if requested range is within file range
+    if ((start < 0) || (end < 0) || (start > stat.size) || (end > stat.size)) {
+      return sendError(req, res, null, DEFAULT_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
+    }
+
+    res.headers['Content-Range'] = req.headers.range;
+
+    // update filestream options
+    streamOptions.start = start;
+    streamOptions.end = end;
+
+    // update size
+    size = end - start;
+  }
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
   res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
   res.headers['Content-Type']   = mime.lookup(file);
-  res.headers['Content-Length'] = stat.size;
+  res.headers['Content-Length'] = size;
+
+  // return only headers if request method is HEAD
+  if (req.method === 'HEAD') {
+    res.status = DEFAULT_STATUS_OK;
+    res.writeHead(DEFAULT_STATUS_OK, res.headers);
+    res.end();
+    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(size).human(), '(' + res.elapsedTime + ')');
+    return;
+  }
 
   if (validateClientCache(req, res, stat, file)) {
     return;  // abort
@@ -339,11 +372,9 @@ function sendFile(req, res, stat, file) {
 
   relFile = path.relative(program.rootPath, file);
   nrmFile = path.normalize(req.path.substring(1));
-  fs.createReadStream(file, {
-    flags: 'r',
-  }).on('close', function () {
+  fs.createReadStream(file, streamOptions).on('close', function () {
     res.end();
-    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + res.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(size).human(), '(' + res.elapsedTime + ')');
   }).on('error', function (err) {
     sendError(req, res, err);
   }).on('data', function (chunk) {
@@ -355,4 +386,4 @@ function sendFile(req, res, stat, file) {
     res.write(chunk);
   });
 
-};
+}
