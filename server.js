@@ -5,8 +5,10 @@ const DEFAULT_FOLLOW_SYMLINKS = false;
 const DEFAULT_DEBUG = false;
 
 const DEFAULT_STATUS_OK = 200;
+const DEFAULT_STATUS_PARTIAL_CONTENT = 206;
 const DEFAULT_STATUS_NOT_MODIFIED = 304;
 const DEFAULT_STATUS_ERR = 500;
+const DEFAULT_STATUS_BAD_REQUEST = 400;
 const DEFAULT_STATUS_FORBIDDEN = 403;
 const DEFAULT_STATUS_FILE_NOT_FOUND = 404;
 const DEFAULT_STATUS_INVALID_METHOD = 405;
@@ -288,7 +290,7 @@ function sendError(req, res, error, status, message) {
       'Content-Length',
       'Content-Location',
       'Content-MD5',
-      'Content-Range',
+    //      'Content-Range', // Error 416 SHOULD contain this header
       'Etag',
       'Expires',
       'Last-Modified'
@@ -326,29 +328,59 @@ function sendFile(req, res, stat, file) {
   var headersSent = false;
   var relFile;
   var nrmFile;
-  var range, start, end;
+  var ranges, range, start, end, valid;
   var streamOptions = {flags: 'r'};
   var size = stat.size;
+  var i;
 
   // support range headers
   if (req.headers.range) {
-    range = req.headers.range.split('-').map(Number);
-    start = range[0];
-    end = range[1];
-
-    // check if requested range is within file range
-    if ((start < 0) || (end < 0) || (start > stat.size) || (end > stat.size)) {
-      return sendError(req, res, null, DEFAULT_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
+    // 'bytes=100-200,300-400'  --> ['100-200','300-400']
+    if (!/^bytes=/.test(req.headers.range)) {
+      sendError(req, res, 'Invalid Range Headers: ' + req.headers.range, DEFAULT_STATUS_BAD_REQUEST);
     }
 
+    ranges = req.headers.range.match(/\d*-\d*/g);
+    size = 0;
+
+    if (!ranges) {
+      sendError(req, res, 'Invalid Range Headers: ' + req.headers.range, DEFAULT_STATUS_BAD_REQUEST);
+    }
+
+    i = ranges.length;
+
+    do {
+        // 100-200 --> [100, 200]   = bytes 100 to 200
+        // -200    --> [null, 200]  = last 100 bytes
+        // 100-    --> [100, null]  = bytes 100 to end
+        range = ranges[i-1].split('-');
+        start = range[0] ? Number(range[0]) : null;
+        end   = range[1] ? Number(range[1]) : null;
+        valid = true;
+
+        // check if requested range is valid:
+        //   - check it is within file range
+        //   - check that start is smaller than end, if both are set
+
+        if ((start > stat.size) || (end > stat.size) || ((start && end) && start > end)) {
+            res.headers['Content-Range'] = 'bytes=0-' + stat.size;
+            return sendError(req, res, null, DEFAULT_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
+        }
+
+        // update size
+        if (start !== null && end !== null) {
+            size += (end - start);
+            ranges[i-1] = {start: start, end: end + 1};
+        } else if (start !== null) {
+            size += (stat.size - start);
+            ranges[i-1] = {start: start, end: stat.size + 1};
+        } else if (end !== null) {
+            size += end;
+            ranges[i-1] = {start: stat.size - end, end: stat.size};
+        }
+    } while (--i);
+
     res.headers['Content-Range'] = req.headers.range;
-
-    // update filestream options
-    streamOptions.start = start;
-    streamOptions.end = end;
-
-    // update size
-    size = end - start;
   }
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
@@ -372,18 +404,46 @@ function sendFile(req, res, stat, file) {
 
   relFile = path.relative(program.rootPath, file);
   nrmFile = path.normalize(req.path.substring(1));
-  fs.createReadStream(file, streamOptions).on('close', function () {
-    res.end();
-    console.log(chalk.gray('-->'), chalk.green(res.status, http.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(size).human(), '(' + res.elapsedTime + ')');
-  }).on('error', function (err) {
-    sendError(req, res, err);
-  }).on('data', function (chunk) {
-    if (!headersSent) {
-      res.status = DEFAULT_STATUS_OK;
-      res.writeHead(DEFAULT_STATUS_OK, res.headers);
-      headersSent = true;
-    }
-    res.write(chunk);
-  });
 
+  function send(range, i, ranges) {
+    if (range) {
+        console.log(range);
+      streamOptions.start = range.start;
+      streamOptions.end = range.end;
+    }
+
+    fs
+      .createReadStream(file, streamOptions)
+      .on('close', function () {
+        // close response when there are no ranges defined
+        // or when the last range has been read
+        if (!ranges || ranges.length === i+1) {
+          res.end();
+          console.log(chalk.gray('-->'),
+                      chalk.green(res.status, http.STATUS_CODES[res.status]),
+                      req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''),
+                      fsize(size).human(),
+                      '(' + res.elapsedTime + ')');
+        }
+      }).on('error', function (err) {
+        sendError(req, res, err);
+      }).on('data', function (chunk) {
+        if (!headersSent) {
+          if (ranges) {
+            res.status = DEFAULT_STATUS_PARTIAL_CONTENT;
+            res.writeHead(DEFAULT_STATUS_PARTIAL_CONTENT, res.headers);
+          } else {
+            res.status = DEFAULT_STATUS_OK;
+            res.writeHead(DEFAULT_STATUS_OK, res.headers);
+          }
+          headersSent = true;
+        }
+        res.write(chunk);
+      });
+  }
+
+  if (ranges)
+      return ranges.map(send);
+
+  return send();
 }
