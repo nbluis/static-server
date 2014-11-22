@@ -328,7 +328,7 @@ function sendFile(req, res, stat, file) {
   var headersSent = false;
   var relFile;
   var nrmFile;
-  var ranges, range, start, end, valid;
+  var ranges, range, start, end;
   var streamOptions = {flags: 'r'};
   var size = stat.size;
   var i;
@@ -356,7 +356,6 @@ function sendFile(req, res, stat, file) {
         range = ranges[i-1].split('-');
         start = range[0] ? Number(range[0]) : null;
         end   = range[1] ? Number(range[1]) : null;
-        valid = true;
 
         // check if requested range is valid:
         //   - check it is within file range
