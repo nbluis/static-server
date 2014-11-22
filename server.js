@@ -18,6 +18,8 @@ const VALID_HTTP_METHODS = ['GET', 'HEAD'];
 
 const TIME_MS_PRECISION = 3;
 
+const MULTIPART_SEPARATOR = '--MULTIPARTSEPERATORaufielqbghgzwr';
+
 
 var util    = require('util');
 var http    = require("http");
@@ -331,20 +333,21 @@ function sendFile(req, res, stat, file) {
   var ranges, range, start, end;
   var streamOptions = {flags: 'r'};
   var size = stat.size;
+  var contentType = mime.lookup(file);
   var i;
 
   // support range headers
   if (req.headers.range) {
     // 'bytes=100-200,300-400'  --> ['100-200','300-400']
-    if (!/^bytes=/.test(req.headers.range)) {
-      sendError(req, res, 'Invalid Range Headers: ' + req.headers.range, DEFAULT_STATUS_BAD_REQUEST);
+    if (!(/^bytes=/).test(req.headers.range)) {
+      sendError(req, res, null, DEFAULT_STATUS_BAD_REQUEST, 'Invalid Range Headers: ' + req.headers.range);
     }
 
     ranges = req.headers.range.match(/\d*-\d*/g);
     size = 0;
 
     if (!ranges) {
-      sendError(req, res, 'Invalid Range Headers: ' + req.headers.range, DEFAULT_STATUS_BAD_REQUEST);
+      return sendError(req, res, null, DEFAULT_STATUS_BAD_REQUEST, 'Invalid Range Headers: ' + req.headers.range);
     }
 
     i = ranges.length;
@@ -378,15 +381,22 @@ function sendFile(req, res, stat, file) {
             ranges[i-1] = {start: stat.size - end, end: stat.size};
         }
     } while (--i);
-
-    res.headers['Content-Range'] = req.headers.range;
   }
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
+  res.headers['Content-Type']   = contentType;
   res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
-  res.headers['Content-Type']   = mime.lookup(file);
   res.headers['Content-Length'] = size;
+
+  if (ranges) {
+    if (ranges.length > 1) {
+      res.headers['Content-Type'] = 'multipart/byteranges; boundary=' + MULTIPART_SEPARATOR;
+      delete res.headers['Content-Length'];
+    } else {
+      res.headers['Content-Range'] = req.headers.range;
+    }
+  }
 
   // return only headers if request method is HEAD
   if (req.method === 'HEAD') {
@@ -406,7 +416,6 @@ function sendFile(req, res, stat, file) {
 
   function send(range, i, ranges) {
     if (range) {
-        console.log(range);
       streamOptions.start = range.start;
       streamOptions.end = range.end;
     }
@@ -424,9 +433,7 @@ function sendFile(req, res, stat, file) {
                       fsize(size).human(),
                       '(' + res.elapsedTime + ')');
         }
-      }).on('error', function (err) {
-        sendError(req, res, err);
-      }).on('data', function (chunk) {
+      }).on('open', function (fd) {
         if (!headersSent) {
           if (ranges) {
             res.status = DEFAULT_STATUS_PARTIAL_CONTENT;
@@ -437,6 +444,15 @@ function sendFile(req, res, stat, file) {
           }
           headersSent = true;
         }
+
+        if (ranges && ranges.length > 1) {
+          res.write(MULTIPART_SEPARATOR + '\n' +
+                    'Content-Type: ' + contentType + '\n' +
+                    'Content-Range: ' + (range.start||'') + '-' + (range.end||'') + '\n\n');
+        }
+      }).on('error', function (err) {
+        sendError(req, res, err);
+      }).on('data', function (chunk) {
         res.write(chunk);
       });
   }
