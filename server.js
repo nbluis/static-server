@@ -2,8 +2,10 @@
 const DEFAULT_INDEX = 'index.html';
 
 const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_PARTIAL_CONTENT = 206;
 const HTTP_STATUS_NOT_MODIFIED = 304;
 const HTTP_STATUS_ERR = 500;
+const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_FORBIDDEN = 403;
 const HTTP_STATUS_NOT_FOUND = 404;
 const HTTP_STATUS_INVALID_METHOD = 405;
@@ -11,16 +13,23 @@ const HTTP_STATUS_REQUEST_RANGE_NOT_SATISFIABLE = 416;
 
 const VALID_HTTP_METHODS = ['GET', 'HEAD'];
 
+const RANGE_REQUEST_HEADER_TEST = /^bytes=/;
+const RANGE_REQUEST_HEADER_PATTERN = /\d*-\d*/g;
+
 const TIME_MS_PRECISION = 3;
+
+const MULTIPART_SEPARATOR = '--MULTIPARTSEPERATORaufielqbghgzwr';
+
+const NEWLINE = '\n';
 
 
 var EventEmitter = require('events').EventEmitter;
 var util         = require('util');
-var http         = require("http");
-var url          = require("url");
+var http         = require('http');
+var url          = require('url');
 var mime         = require('mime');
-var path         = require("path");
-var fs           = require("fs");
+var path         = require('path');
+var fs           = require('fs');
 var slice        = Array.prototype.slice;
 
 
@@ -80,9 +89,29 @@ Start listening on the given host:port
 @param callback {Function}    the function to call once the server is ready
 */
 StaticServer.prototype.start = function start(callback) {
-  var server = this;
+  this._socket = http.createServer(requestHandler(this)).listen(this.port, this.host, callback);
+}
 
-  this._socket = http.createServer(function(req, res) {
+
+/**
+Stop listening
+*/
+StaticServer.prototype.stop = function stop() {
+  if (this._socket) {
+    this._socket.close();
+    this._socket = null;
+  }
+}
+
+
+/**
+Return the server's request handler function
+
+@param server {StaticServer}  server instance
+@return {Function}
+*/
+function requestHandler(server) {
+  return function handler(req, res) {
     var uri = req.path = url.parse(req.url).pathname;
     var filename = path.join(server.rootPath, uri);
     var timestamp = process.hrtime();
@@ -120,20 +149,9 @@ StaticServer.prototype.start = function start(callback) {
         sendFile(server, req, res, stat, file);
       }
     });
-
-  }).listen(this.port, this.host, callback);
+  };
 }
 
-
-/**
-Stop listening
-*/
-StaticServer.prototype.stop = function stop() {
-  if (this._socket) {
-    this._socket.close();
-    this._socket = null;
-  }
-}
 
 
 /**
@@ -258,6 +276,66 @@ function validateClientCache(req, res, stat) {
   }
 }
 
+function parseRanges(req, size) {
+  var ranges;
+  var start;
+  var end;
+  var i;
+  var originalSize = size;
+
+  // support range headers
+  if (req.headers.range) {
+    // 'bytes=100-200,300-400'  --> ['100-200','300-400']
+    if (!RANGE_REQUEST_HEADER_TEST.test(req.headers.range)) {
+      return sendError(req, res, null, HTTP_STATUS_BAD_REQUEST, 'Invalid Range Headers: ' + req.headers.range);
+    }
+
+    ranges = req.headers.range.match(RANGE_REQUEST_HEADER_PATTERN);
+    size = 0;
+
+    if (!ranges) {
+      return sendError(server, req, res, null, HTTP_STATUS_BAD_REQUEST, 'Invalid Range Headers: ' + req.headers.range);
+    }
+
+    i = ranges.length;
+
+    while (--i >= 0) {
+      // 100-200 --> [100, 200]   = bytes 100 to 200
+      // -200    --> [null, 200]  = last 100 bytes
+      // 100-    --> [100, null]  = bytes 100 to end
+      range = ranges[i].split('-');
+      start = range[0] ? Number(range[0]) : null;
+      end   = range[1] ? Number(range[1]) : null;
+
+      // check if requested range is valid:
+      //   - check it is within file range
+      //   - check that start is smaller than end, if both are set
+
+      if ((start > originalSize) || (end > originalSize) || ((start && end) && start > end)) {
+        res.headers['Content-Range'] = 'bytes=0-' + originalSize;
+        return sendError(server, req, res, null, DEFAULT_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
+      }
+
+      // update size
+      if (start !== null && end !== null) {
+        size += (end - start);
+        ranges[i] = { start: start, end: end + 1 };
+      } else if (start !== null) {
+        size += (originalSize - start);
+        ranges[i] = { start: start, end: originalSize + 1 };
+      } else if (end !== null) {
+        size += end;
+        ranges[i] = { start: originalSize - end, end: originalSize };
+      }
+    }
+  }
+
+  return {
+    ranges: ranges,
+    size: size
+  };
+}
+
 
 /**
 Send error back to the client. If `status` is not specified, a value
@@ -316,64 +394,80 @@ will be read and the error will be sent to stderr
 */
 function sendFile(server, req, res, stat, file) {
   var headersSent = false;
-  var range;
-  var start;
-  var end;
+  var contentParts = parseRanges(req, stat.size);
   var streamOptions = { flags: 'r' };
-  var size = stat.size;
+  var contentType = mime.lookup(file);
+  var rangeIndex = 0;
 
-  // support range headers
-  if (req.headers.range) {
-    range = req.headers.range.split('-').map(Number);
-    start = range[0];
-    end = range[1];
-
-    // check if requested range is within file range
-    if ((start < 0) || (end < 0) || (start > stat.size) || (end > stat.size)) {
-      return sendError(req, res, null, HTTP_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
-    }
-
-    res.headers['Content-Range'] = req.headers.range;
-
-    // update filestream options
-    streamOptions.start = start;
-    streamOptions.end = end;
-
-    // update size
-    size = end - start;
+  if (!contentParts) {
+    return;  // ranges failed, abort
   }
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
   res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
-  res.headers['Content-Type']   = mime.lookup(file);
-  res.headers['Content-Length'] = size;
+
+  if (contentParts.ranges && contentParts.ranges.length > 1) {
+    res.headers['Content-Type'] = 'multipart/byteranges; boundary=' + MULTIPART_SEPARATOR;
+  } else {
+    res.headers['Content-Type']   = contentType;
+    res.headers['Content-Length'] = contentParts.size;
+
+    if (contentParts.ranges) {
+      res.headers['Content-Range'] = req.headers.range;
+    }
+  }
 
   // return only headers if request method is HEAD
   if (req.method === 'HEAD') {
     res.status = HTTP_STATUS_OK;
-    res.writeHead(DEFAULT_STATUS_OK, res.headers);
+    res.writeHead(HTTP_STATUS_OK, res.headers);
     res.end();
     server.emit('response', req, res, null, file, stat);
-    return;
+  } else if (!validateClientCache(req, res, stat, file)) {
+
+    (function sendNext() {
+      var range;
+
+      if (contentParts.ranges) {
+        range = contentParts.ranges[rangeIndex++];
+
+        streamOptions.start = range.start;
+        streamOptions.end = range.end;
+      }
+
+      fs.createReadStream(file, streamOptions)
+        .on('close', function () {
+          // close response when there are no ranges defined
+          // or when the last range has been read
+          if (!range || (rangeIndex >= contentParts.ranges.length)) {
+            res.end();
+            server.emit('response', req, res, null, file, stat);
+          } else {
+            setImmediate(sendNext);
+          }
+        }).on('open', function (fd) {
+          if (!headersSent) {
+            if (range) {
+              res.status = HTTP_STATUS_PARTIAL_CONTENT;
+            } else {
+              res.status = HTTP_STATUS_OK;
+            }
+            res.writeHead(res.status, res.headers);
+            headersSent = true;
+          }
+
+          if (range && contentParts.ranges.length > 1) {
+            res.write(MULTIPART_SEPARATOR + NEWLINE +
+                      'Content-Type: ' + contentType + NEWLINE +
+                      'Content-Range: ' + (range.start || '') + '-' + (range.end || '') + NEWLINE + NEWLINE);
+          }
+        }).on('error', function (err) {
+          sendError(server, req, res, err);
+        }).on('data', function (chunk) {
+          res.write(chunk);
+        });
+    })();
   }
 
-  if (validateClientCache(req, res, stat, file)) {
-    return;  // abort
-  }
-
-  fs.createReadStream(file, streamOptions).on('close', function () {
-    res.end();
-    server.emit('response', req, res, null, file, stat);
-  }).on('error', function (err) {
-    sendError(server, req, res, err);
-  }).on('data', function (chunk) {
-    if (!headersSent) {
-      res.status = HTTP_STATUS_OK;
-      res.writeHead(HTTP_STATUS_OK, res.headers);
-      headersSent = true;
-    }
-    res.write(chunk);
-  });
-
-};
+}

@@ -103,7 +103,13 @@ describe('StaticServer test', function () {
 
 
   describe('Testing range', function () {
-    it('should return valid file content for specified range');
+    it('should return first bytes only');
+
+    it('should return last bytes only');
+
+    it('should return specified bytes only');
+
+    it('should handle multiple ranges');
   })
 
 
