@@ -37,7 +37,7 @@ server = new StaticServer(program);
 
 server.start(function () {
   console.log(chalk.blue('*'), 'Static server successfully started.');
-  console.log(chalk.blue('*'), 'Listening on port:', chalk.cyan(program.port));
+  console.log(chalk.blue('*'), 'Serving files at:', chalk.cyan('http://localhost:' + program.port));
   console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'to shutdown.');
 
   return server;

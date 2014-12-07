@@ -62,6 +62,8 @@ describe('StaticServer test', function () {
     ;
   });
 
+  it('should accept HEAD requests');
+
 
   describe('testing content types', function () {
 
@@ -99,9 +101,18 @@ describe('StaticServer test', function () {
 
   });
 
+
+  describe('Testing range', function () {
+    it('should return valid file content for specified range');
+  })
+
+
   describe('Symbolic links', function () {
+
     it('should handle fail');
+
     it('should follow');
+
   });
 
 

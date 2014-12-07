@@ -1,14 +1,15 @@
 
 const DEFAULT_INDEX = 'index.html';
 
-const DEFAULT_STATUS_OK = 200;
-const DEFAULT_STATUS_NOT_MODIFIED = 304;
-const DEFAULT_STATUS_ERR = 500;
-const DEFAULT_STATUS_FORBIDDEN = 403;
-const DEFAULT_STATUS_FILE_NOT_FOUND = 404;
-const DEFAULT_STATUS_INVALID_METHOD = 405;
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_NOT_MODIFIED = 304;
+const HTTP_STATUS_ERR = 500;
+const HTTP_STATUS_FORBIDDEN = 403;
+const HTTP_STATUS_NOT_FOUND = 404;
+const HTTP_STATUS_INVALID_METHOD = 405;
+const HTTP_STATUS_REQUEST_RANGE_NOT_SATISFIABLE = 416;
 
-const VALID_HTTP_METHOD = 'GET';
+const VALID_HTTP_METHODS = ['GET', 'HEAD'];
 
 const TIME_MS_PRECISION = 3;
 
@@ -101,20 +102,20 @@ StaticServer.prototype.start = function start(callback) {
 
     server.emit('request', req);
 
-    if (req.method !== VALID_HTTP_METHOD) {
-      return sendError(server, req, res, null, DEFAULT_STATUS_INVALID_METHOD);
+    if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
+      return sendError(server, req, res, null, HTTP_STATUS_INVALID_METHOD);
     } else if (!validPath(server.rootPath, filename)) {
-      return sendError(server, req, res, null, DEFAULT_STATUS_FORBIDDEN);
+      return sendError(server, req, res, null, HTTP_STATUS_FORBIDDEN);
     }
 
     getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        sendError(server, req, res, null, DEFAULT_STATUS_FILE_NOT_FOUND);
+        sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here
         //
-        sendError(server, req, res, null, DEFAULT_STATUS_FORBIDDEN);
+        sendError(server, req, res, null, HTTP_STATUS_FORBIDDEN);
       } else {
         sendFile(server, req, res, stat, file);
       }
@@ -244,7 +245,7 @@ function validateClientCache(req, res, stat) {
         delete res.headers[entityHeader];
     });
 
-    res.status = DEFAULT_STATUS_NOT_MODIFIED;
+    res.status = HTTP_STATUS_NOT_MODIFIED;
 
     res.writeHead(res.status, res.headers);
     res.end();
@@ -271,7 +272,7 @@ the given status is returned.
 @param message {String}      the status message (optional)
 */
 function sendError(server, req, res, err, status, message) {
-  status = status || res.status || DEFAULT_STATUS_ERR
+  status = status || res.status || HTTP_STATUS_ERR
   message = message || http.STATUS_CODES[status];
 
   if (status >= 400) {
@@ -282,7 +283,7 @@ function sendError(server, req, res, err, status, message) {
       'Content-Length',
       'Content-Location',
       'Content-MD5',
-      'Content-Range',
+      //      'Content-Range', // Error 416 SHOULD contain this header
       'Etag',
       'Expires',
       'Last-Modified'
@@ -315,28 +316,61 @@ will be read and the error will be sent to stderr
 */
 function sendFile(server, req, res, stat, file) {
   var headersSent = false;
+  var range;
+  var start;
+  var end;
+  var streamOptions = { flags: 'r' };
+  var size = stat.size;
+
+  // support range headers
+  if (req.headers.range) {
+    range = req.headers.range.split('-').map(Number);
+    start = range[0];
+    end = range[1];
+
+    // check if requested range is within file range
+    if ((start < 0) || (end < 0) || (start > stat.size) || (end > stat.size)) {
+      return sendError(req, res, null, HTTP_STATUS_REQUEST_RANGE_NOT_SATISFIABLE);
+    }
+
+    res.headers['Content-Range'] = req.headers.range;
+
+    // update filestream options
+    streamOptions.start = start;
+    streamOptions.end = end;
+
+    // update size
+    size = end - start;
+  }
 
   res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
   res.headers['Date']           = new Date().toUTCString();
   res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
   res.headers['Content-Type']   = mime.lookup(file);
-  res.headers['Content-Length'] = stat.size;
+  res.headers['Content-Length'] = size;
+
+  // return only headers if request method is HEAD
+  if (req.method === 'HEAD') {
+    res.status = HTTP_STATUS_OK;
+    res.writeHead(DEFAULT_STATUS_OK, res.headers);
+    res.end();
+    server.emit('response', req, res, null, file, stat);
+    return;
+  }
 
   if (validateClientCache(req, res, stat, file)) {
     return;  // abort
   }
 
-  fs.createReadStream(file, {
-    flags: 'r'
-  }).on('close', function () {
+  fs.createReadStream(file, streamOptions).on('close', function () {
     res.end();
     server.emit('response', req, res, null, file, stat);
   }).on('error', function (err) {
     sendError(server, req, res, err);
   }).on('data', function (chunk) {
     if (!headersSent) {
-      res.status = DEFAULT_STATUS_OK;
-      res.writeHead(DEFAULT_STATUS_OK, res.headers);
+      res.status = HTTP_STATUS_OK;
+      res.writeHead(HTTP_STATUS_OK, res.headers);
       headersSent = true;
     }
     res.write(chunk);
