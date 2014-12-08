@@ -56,7 +56,7 @@ server.on('response', function (req, res, err, file, stat) {
   var nrmFile;
 
   if (res.status >= 400) {
-    console.log(chalk.gray('-->'), chalk.red(status, message), req.path, '(' + req.elapsedTime + ')');
+    console.log(chalk.gray('-->'), chalk.red(res.status), req.path, '(' + req.elapsedTime + ')');
   } else if (file) {
     relFile = path.relative(server.rootPath, file);
     nrmFile = path.normalize(req.path.substring(1));
