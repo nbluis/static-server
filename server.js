@@ -239,7 +239,7 @@ Validate that this file is not client cached
 @param res {Object}       the response object
 @return {boolean}         true if the file is client cached
 */
-function validateClientCache(req, res, stat) {
+function validateClientCache(server, req, res, stat) {
   var mtime         = stat.mtime.getTime();
   var clientETag  = req.headers['if-none-match'];
   var clientMTime = Date.parse(req.headers['if-modified-since']);
@@ -424,7 +424,7 @@ function sendFile(server, req, res, stat, file) {
     res.writeHead(HTTP_STATUS_OK, res.headers);
     res.end();
     server.emit('response', req, res, null, file, stat);
-  } else if (!validateClientCache(req, res, stat, file)) {
+  } else if (!validateClientCache(server, req, res, stat, file)) {
 
     (function sendNext() {
       var range;
