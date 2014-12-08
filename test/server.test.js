@@ -67,8 +67,8 @@ describe('StaticServer test', function () {
 
   describe('testing content types', function () {
 
-    function testFixture(testFile, contentType, done) {
-      fs.readFile(path.join(serverOptions.rootPath, testFile), 'UTF-8', function(err, fileContent) {
+    function testFixture(testFile, contentEncoding, contentType, done) {
+      fs.readFile(path.join(serverOptions.rootPath, testFile), contentEncoding, function(err, fileContent) {
         if (err) {
           return done(err);
         }
@@ -84,19 +84,19 @@ describe('StaticServer test', function () {
     }
 
     it('should handle HTML', function (done) {
-      testFixture('test.html', /html/, done);
+      testFixture('test.html', 'UTF-8', /html/, done);
     });
 
     it('should handle JavaScript', function (done) {
-      testFixture('test.js', /javascript/, done);
+      testFixture('test.js', 'UTF-8', /javascript/, done);
     });
 
     it('should handle PNG', function (done) {
-      testFixture('test.png', 'image/png', done);
+      testFixture('test.png', null, 'image/png', done);
     });
 
     it('should handle JPG', function (done) {
-      testFixture('test.jpg', 'image/jpeg', done);
+      testFixture('test.jpg', null, 'image/jpeg', done);
     });
 
   });
