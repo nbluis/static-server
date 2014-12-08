@@ -10,5 +10,5 @@ lib-cov
 *.tgz
 
 npm-debug.log
-bower_components
+coverage
 node_modules
