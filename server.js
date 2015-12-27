@@ -208,9 +208,9 @@ function getFileStats(server, files, callback) {
             if (err) {
               checkNext(err, index);
             } else {
-			  if (!path.isAbsolute(fileRef)) {
-  			    fileRef = path.join( path.dirname(file), fileRef );
-  			  }
+              if (!path.isAbsolute(fileRef)) {
+                fileRef = path.join( path.dirname(file), fileRef );
+              }
               server.emit('symbolicLink', fileRef);
               next(fileRef, index);
             }
