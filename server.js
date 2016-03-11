@@ -141,7 +141,7 @@ function requestHandler(server) {
 
     getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        handleError(err);
+        handleError(server, req, res, err);
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here
@@ -160,9 +160,10 @@ Handle an error
 
 Currently assumes that the only error would be a 404 error.
 
+@param server {StaticServer}  server instance
 @param err {Object} the error to handle
 */
-function handeError(err){
+function handleError(server, req, res, err){
   if(server.error404page){
     getFileStats(server, [server.error404page], function(err, stat, file, index){
       if(err){
