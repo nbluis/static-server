@@ -148,7 +148,7 @@ function requestHandler(server) {
             }else{
               sendFile(server, req, res, stat, file);
             }
-          })
+          });
         }else{
           sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
         }

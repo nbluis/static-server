@@ -48,16 +48,28 @@ describe('StaticServer test', function () {
   });
 
   it('should show a 404 page if configured to', function(done){
-    testServer.error404page = path.join(__dirname, 'fixtures', '404.html')
+    testServer.error404page = path.join(__dirname, 'fixtures', '404.html');
 
     request(testServer._socket)
       .get('/foo.html')
       .expect(200)
       .expect(/<h1>Error 404<\/h1>/)
       .end(function(err, res){
-        testServer.error404page = undefined
-        done(err)
-      })
+        testServer.error404page = undefined;
+        done(err);
+      });
+  })
+
+  it('should throw 404 page if configured page does not exist', function(done){
+    testServer.error404page = path.join(__dirname, 'fixtures', 'missing.html');
+
+    request(testServer._socket)
+      .get('/foo.html')
+      .expect(404)
+      .end(function(err, res){
+        testServer.error404page = undefined;
+        done(err);
+      });
   })
 
   it('should handle index', function (done) {
