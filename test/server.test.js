@@ -55,9 +55,8 @@ describe('StaticServer test', function () {
       .expect(200)
       .expect(/<h1>Error 404<\/h1>/)
       .end(function(err, res){
-        if(err){ throw err }
         testServer.error404page = undefined
-        done()
+        done(err)
       })
   })
 
