@@ -50,7 +50,8 @@ Options are :
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
    - index         the default index file to server for a directory (default 'index.html')
-   - error404page  the file to send for a 404 error.
+   - templates
+      - notFound   the 404 error template
 
 @param options {Object}
 */
@@ -61,13 +62,19 @@ function StaticServer(options) {
     throw new Error('Root path not specified');
   }
 
+  if(!options.templates){
+    options.templates = {};
+  }
+
   this.name = options.name;
   this.host = options.host;
   this.port = options.port;
-  this.error404page = options.error404page
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
   this.index = options.index || DEFAULT_INDEX;
+  this.templates = {
+    'notFound': options.templates.notFound
+  };
 
   Object.defineProperty(this, '_socket', {
     configurable: true,
@@ -166,8 +173,8 @@ Currently assumes that the only error would be a 404 error.
 @param err {Object} the error to handle
 */
 function handleError(server, req, res, err){
-  if(server.error404page){
-    getFileStats(server, [server.error404page], function(err, stat, file, index){
+  if(server.templates.notFound){
+    getFileStats(server, [server.templates.notFound], function(err, stat, file, index){
       if(err){
         sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
       }else{
