@@ -63,6 +63,7 @@ function StaticServer(options) {
   this.name = options.name;
   this.host = options.host;
   this.port = options.port;
+  this.error404page = options.error404page
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
   this.index = options.index || DEFAULT_INDEX;
@@ -139,7 +140,17 @@ function requestHandler(server) {
 
     getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+        if(server.error404page){
+          getFileStats(server, [server.error404page], function(err, stat, file, index){
+            if(err){
+              sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+            }else{
+              sendFile(server, req, res, stat, file);
+            }
+          })
+        }else{
+          sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+        }
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here

@@ -47,6 +47,25 @@ describe('StaticServer test', function () {
     ;
   });
 
+  it('should show a 404 page if configured to', function(done){
+    testServer404 = new Server({
+      rootPath: path.join(__dirname, 'fixtures'),
+      error404page: path.join(__dirname, 'fixtures', '404.html')
+    })
+
+    testServer404.start(function(){
+      request(testServer404._socket)
+        .get('/foo.html')
+        .expect(200)
+        .expect(/<h1>Error 404<\/h1>/)
+        .end(function(err, res){
+          if(err){ throw err }
+          testServer404.stop()
+          done()
+        })
+    })
+  })
+
   it('should handle index', function (done) {
     var oldIndex = testServer.index;
     testServer.index = 'test.html';
