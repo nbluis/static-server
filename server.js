@@ -160,7 +160,9 @@ Handle an error
 
 Currently assumes that the only error would be a 404 error.
 
-@param server {StaticServer}  server instance
+@param server {StaticServer} server instance
+@param req {Object} request Object
+@param res {Object} response Object
 @param err {Object} the error to handle
 */
 function handleError(server, req, res, err){
