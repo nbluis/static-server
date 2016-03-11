@@ -50,6 +50,7 @@ Options are :
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
    - index         the default index file to server for a directory (default 'index.html')
+   - error404page  the file to send for a 404 error.
 
 @param options {Object}
 */

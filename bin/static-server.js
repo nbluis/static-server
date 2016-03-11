@@ -4,6 +4,7 @@ const DEFAULT_PORT = 9080;
 const DEFAULT_INDEX = 'index.html';
 const DEFAULT_FOLLOW_SYMLINKS = false;
 const DEFAULT_DEBUG = false;
+const DEFAULT_ERROR_404 = undefined;
 
 
 var path    = require("path");
@@ -25,6 +26,7 @@ program
   .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
+  .option('-e, --error404 <filename>', 'the error 404 file', DEFAULT_ERROR_404)
   .parse(process.argv);
 ;
 
@@ -108,4 +110,3 @@ function initTerminateHandlers() {
     process.exit(0);
   });
 }
-
