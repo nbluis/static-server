@@ -141,17 +141,7 @@ function requestHandler(server) {
 
     getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        if(server.error404page){
-          getFileStats(server, [server.error404page], function(err, stat, file, index){
-            if(err){
-              sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
-            }else{
-              sendFile(server, req, res, stat, file);
-            }
-          });
-        }else{
-          sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
-        }
+        handleError(err);
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here
@@ -162,6 +152,28 @@ function requestHandler(server) {
       }
     });
   };
+}
+
+
+/**
+Handle an error
+
+Currently assumes that the only error would be a 404 error.
+
+@param err {Object} the error to handle
+*/
+function handeError(err){
+  if(server.error404page){
+    getFileStats(server, [server.error404page], function(err, stat, file, index){
+      if(err){
+        sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+      }else{
+        sendFile(server, req, res, stat, file);
+      }
+    });
+  }else{
+    sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+  }
 }
 
 
