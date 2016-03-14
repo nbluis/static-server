@@ -17,6 +17,8 @@ var pkg     = require(path.join(__dirname, '..', 'package.json'));
 var StaticServer = require('../server.js');
 var server;
 
+var templates = {};
+
 initTerminateHandlers();
 
 program
@@ -26,14 +28,14 @@ program
   .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
-  .option('-e, --error404 <filename>', 'the error 404 file', DEFAULT_ERROR_404)
+  .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
   .parse(process.argv);
 ;
 
 // overrides
 program.rootPath = program.args[0] || process.cwd();
 program.name = pkg.name;
-
+program.templates = templates;
 
 server = new StaticServer(program);
 
@@ -109,4 +111,8 @@ function initTerminateHandlers() {
     console.log(chalk.blue.bold('!'), chalk.yellow.bold('SIGTERM'), 'detected');
     process.exit(0);
   });
+}
+
+function addNotFoundTemplate(v){
+  templates.notFound = v;
 }
