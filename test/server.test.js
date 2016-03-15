@@ -47,6 +47,31 @@ describe('StaticServer test', function () {
     ;
   });
 
+  it('should show a 404 page if configured to', function(done){
+    testServer.templates.notFound = path.join(__dirname, 'fixtures', '404.html');
+
+    request(testServer._socket)
+      .get('/foo.html')
+      .expect(404)
+      .expect(/<h1>Error 404<\/h1>/)
+      .end(function(err, res){
+        testServer.templates.notFound = undefined;
+        done(err);
+      });
+  })
+
+  it('should throw 404 page if configured page does not exist', function(done){
+    testServer.templates.notFound = path.join(__dirname, 'fixtures', 'missing.html');
+
+    request(testServer._socket)
+      .get('/foo.html')
+      .expect(404)
+      .end(function(err, res){
+        testServer.templates.notFound = undefined;
+        done(err);
+      });
+  })
+
   it('should handle index', function (done) {
     var oldIndex = testServer.index;
     testServer.index = 'test.html';

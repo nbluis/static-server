@@ -4,6 +4,7 @@ const DEFAULT_PORT = 9080;
 const DEFAULT_INDEX = 'index.html';
 const DEFAULT_FOLLOW_SYMLINKS = false;
 const DEFAULT_DEBUG = false;
+const DEFAULT_ERROR_404 = undefined;
 
 
 var path    = require("path");
@@ -16,6 +17,8 @@ var pkg     = require(path.join(__dirname, '..', 'package.json'));
 var StaticServer = require('../server.js');
 var server;
 
+var templates = {};
+
 initTerminateHandlers();
 
 program
@@ -25,13 +28,14 @@ program
   .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
+  .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
   .parse(process.argv);
 ;
 
 // overrides
 program.rootPath = program.args[0] || process.cwd();
 program.name = pkg.name;
-
+program.templates = templates;
 
 server = new StaticServer(program);
 
@@ -109,3 +113,6 @@ function initTerminateHandlers() {
   });
 }
 
+function addNotFoundTemplate(v){
+  templates.notFound = v;
+}

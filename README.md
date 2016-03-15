@@ -11,12 +11,13 @@ A simple http server to serve static resource files from a local directory.
 
 ## Options
 
-    -h, --help              output usage information
-    -V, --version           output the version number
-    -p, --port <n>          the port to listen to for incoming HTTP connections
-    -i, --index <filename>  the default index file if not specified
-    -f, --follow-symlink    follow links, otherwise fail with file not found
-    -d, --debug             enable to show error messages
+    -h, --help                output usage information
+    -V, --version             output the version number
+    -p, --port <n>            the port to listen to for incoming HTTP connections
+    -i, --index <filename>    the default index file if not specified
+    -f, --follow-symlink      follow links, otherwise fail with file not found
+    -d, --debug               enable to show error messages
+    -e, --error404 <filename> the error 404 file
 
 ## Using as a node module
 
@@ -32,7 +33,8 @@ var server = new StaticServer({
   port: 1337,               // optional, defaults to a random port
   host: '10.0.0.100',       // optional, defaults to any interface
   followSymlink: true,      // optional, defaults to a 404 error
-  index: 'foo.html'         // optional, defaults to 'index.html'
+  index: 'foo.html',        // optional, defaults to 'index.html'
+  error404page: '404.html'  // optional, defaults to undefined
 });
 
 server.start(function () {

@@ -50,6 +50,8 @@ Options are :
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
    - index         the default index file to server for a directory (default 'index.html')
+   - templates
+      - notFound   the 404 error template
 
 @param options {Object}
 */
@@ -60,12 +62,19 @@ function StaticServer(options) {
     throw new Error('Root path not specified');
   }
 
+  if(!options.templates){
+    options.templates = {};
+  }
+
   this.name = options.name;
   this.host = options.host;
   this.port = options.port;
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
   this.index = options.index || DEFAULT_INDEX;
+  this.templates = {
+    'notFound': options.templates.notFound
+  };
 
   Object.defineProperty(this, '_socket', {
     configurable: true,
@@ -139,7 +148,7 @@ function requestHandler(server) {
 
     getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
       if (err) {
-        sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+        handleError(server, req, res, err);
       } else if (stat.isDirectory()) {
         //
         // TODO : handle directory listing here
@@ -150,6 +159,32 @@ function requestHandler(server) {
       }
     });
   };
+}
+
+
+/**
+Handle an error
+
+Currently assumes that the only error would be a 404 error.
+
+@param server {StaticServer} server instance
+@param req {Object} request Object
+@param res {Object} response Object
+@param err {Object} the error to handle
+*/
+function handleError(server, req, res, err){
+  if(server.templates.notFound){
+    getFileStats(server, [server.templates.notFound], function(err, stat, file, index){
+      if (err) {
+        sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+      } else {
+        res.status = HTTP_STATUS_NOT_FOUND;
+        sendFile(server, req, res, stat, file);
+      }
+    });
+  }else{
+    sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
+  }
 }
 
 
@@ -451,10 +486,12 @@ function sendFile(server, req, res, stat, file) {
           }
         }).on('open', function (fd) {
           if (!headersSent) {
-            if (range) {
-              res.status = HTTP_STATUS_PARTIAL_CONTENT;
-            } else {
-              res.status = HTTP_STATUS_OK;
+            if (!res.status){
+              if (range) {
+                res.status = HTTP_STATUS_PARTIAL_CONTENT;
+              } else {
+                res.status = HTTP_STATUS_OK;
+              }
             }
             res.writeHead(res.status, res.headers);
             headersSent = true;
