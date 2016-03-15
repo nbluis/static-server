@@ -52,7 +52,7 @@ describe('StaticServer test', function () {
 
     request(testServer._socket)
       .get('/foo.html')
-      .expect(200)
+      .expect(404)
       .expect(/<h1>Error 404<\/h1>/)
       .end(function(err, res){
         testServer.templates.notFound = undefined;

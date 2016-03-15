@@ -175,9 +175,10 @@ Currently assumes that the only error would be a 404 error.
 function handleError(server, req, res, err){
   if(server.templates.notFound){
     getFileStats(server, [server.templates.notFound], function(err, stat, file, index){
-      if(err){
+      if (err) {
         sendError(server, req, res, null, HTTP_STATUS_NOT_FOUND);
-      }else{
+      } else {
+        res.status = HTTP_STATUS_NOT_FOUND;
         sendFile(server, req, res, stat, file);
       }
     });
@@ -485,10 +486,12 @@ function sendFile(server, req, res, stat, file) {
           }
         }).on('open', function (fd) {
           if (!headersSent) {
-            if (range) {
-              res.status = HTTP_STATUS_PARTIAL_CONTENT;
-            } else {
-              res.status = HTTP_STATUS_OK;
+            if (!res.status){
+              if (range) {
+                res.status = HTTP_STATUS_PARTIAL_CONTENT;
+              } else {
+                res.status = HTTP_STATUS_OK;
+              }
             }
             res.writeHead(res.status, res.headers);
             headersSent = true;
