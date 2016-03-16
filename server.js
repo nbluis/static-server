@@ -49,8 +49,8 @@ Options are :
    - port          the listening port number
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
-   - index         the default index file to server for a directory (default 'index.html')
    - templates
+      - index      the default index file to server for a directory (default 'index.html')
       - notFound   the 404 error template
 
 @param options {Object}
@@ -77,8 +77,8 @@ function StaticServer(options) {
   };
 
   if (options.index) {
-    console.log("options.index is now deprecated please use options.templates.index instead.")
-    this.templates.index = options.index
+    console.log("options.index is now deprecated please use options.templates.index instead.");
+    this.templates.index = options.index;
   }
 
   Object.defineProperty(this, '_socket', {
