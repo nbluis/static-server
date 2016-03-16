@@ -34,7 +34,7 @@ describe('StaticServer test', function () {
     assert.equal(testServer.port, undefined);
 
     testServer.followSymlink.should.be.false;
-    testServer.index.should.equal('index.html');
+    testServer.templates.index.should.equal('index.html');
 
     testServer.should.have.ownProperty('_socket');
   });
@@ -74,7 +74,7 @@ describe('StaticServer test', function () {
 
   it('should handle index', function (done) {
     var oldIndex = testServer.index;
-    testServer.index = 'test.html';
+    testServer.templates.index = 'test.html';
 
     request(testServer._socket)
       .get('/')

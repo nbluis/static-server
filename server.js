@@ -71,10 +71,15 @@ function StaticServer(options) {
   this.port = options.port;
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
-  this.index = options.index || DEFAULT_INDEX;
   this.templates = {
+    'index': (options.templates.index || DEFAULT_INDEX),
     'notFound': options.templates.notFound
   };
+
+  if (options.index) {
+    console.log("options.index is now deprecated please use options.templates.index instead.")
+    this.templates.index = options.index
+  }
 
   Object.defineProperty(this, '_socket', {
     configurable: true,
@@ -146,7 +151,7 @@ function requestHandler(server) {
       return sendError(server, req, res, null, HTTP_STATUS_FORBIDDEN);
     }
 
-    getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
+    getFileStats(server, [filename, path.join(filename, server.templates.index)], function (err, stat, file, index) {
       if (err) {
         handleError(server, req, res, err);
       } else if (stat.isDirectory()) {

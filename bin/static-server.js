@@ -25,7 +25,7 @@ program
   .version(pkg.name + '@' + pkg.version)
   .usage('[options] <root_path>')
   .option('-p, --port <n>', 'the port to listen to for incoming HTTP connections', DEFAULT_PORT)
-  .option('-i, --index <filename>', 'the default index file if not specified', DEFAULT_INDEX)
+  .option('-i, --index <filename>', 'the default index file if not specified', addIndexTemplate, DEFAULT_INDEX)
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
   .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
@@ -115,4 +115,8 @@ function initTerminateHandlers() {
 
 function addNotFoundTemplate(v){
   templates.notFound = v;
+}
+
+function addIndexTemplate(v){
+  templates.index = v;
 }
