@@ -138,6 +138,10 @@ function requestHandler(server) {
       res.headers['X-Powered-By'] = server.name;
     }
 
+    if (server.cors) {
+      res.headers['Access-Control-Allow-Origin'] = server.cors;
+    }
+
     server.emit('request', req);
 
     if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
