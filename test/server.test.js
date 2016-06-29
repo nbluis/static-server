@@ -40,7 +40,7 @@ describe('StaticServer test', function () {
     testServer.should.have.ownProperty('_socket');
   });
 
-  it('should handle 404 requests', function (done) {
+  it('should handle 403 requests', function (done) {
     request(testServer._socket)
       .get('/')
       .expect(403)
