@@ -50,8 +50,8 @@ Options are :
    - port          the listening port number
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
-   - index         the default index file to server for a directory (default 'index.html')
    - templates
+      - index      the default index file to server for a directory (default 'index.html')
       - notFound   the 404 error template
 
 @param options {Object}
@@ -73,10 +73,15 @@ function StaticServer(options) {
   this.cors = options.cors;
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
-  this.index = options.index || DEFAULT_INDEX;
   this.templates = {
+    'index': (options.templates.index || DEFAULT_INDEX),
     'notFound': options.templates.notFound
   };
+
+  if (options.index) {
+    console.log("options.index is now deprecated please use options.templates.index instead.");
+    this.templates.index = options.index;
+  }
 
   Object.defineProperty(this, '_socket', {
     configurable: true,
@@ -152,7 +157,7 @@ function requestHandler(server) {
       return sendError(server, req, res, null, HTTP_STATUS_FORBIDDEN);
     }
 
-    getFileStats(server, [filename, path.join(filename, server.index)], function (err, stat, file, index) {
+    getFileStats(server, [filename, path.join(filename, server.templates.index)], function (err, stat, file, index) {
       if (err) {
         handleError(server, req, res, err);
       } else if (stat.isDirectory()) {
