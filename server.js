@@ -46,6 +46,7 @@ Options are :
    - name          the server name, what will be sent as "X-Powered-by"
    - host          the host interface where the server will listen to. If not specified,
                    the server will listen on any networking interfaces
+   - cors          a cors header, will be sent as "Access-Control-Allow-Origin",
    - port          the listening port number
    - rootPath      the serving root path. Any file above that path will be denied
    - followSymlink true to follow any symbolic link, false to forbid
@@ -69,6 +70,7 @@ function StaticServer(options) {
   this.name = options.name;
   this.host = options.host;
   this.port = options.port;
+  this.cors = options.cors;
   this.rootPath = path.resolve(options.rootPath);
   this.followSymlink = !!options.followSymlink;
   this.index = options.index || DEFAULT_INDEX;
@@ -136,6 +138,10 @@ function requestHandler(server) {
     res.headers = {};
     if (server.name) {
       res.headers['X-Powered-By'] = server.name;
+    }
+
+    if (server.cors) {
+      res.headers['Access-Control-Allow-Origin'] = server.cors;
     }
 
     server.emit('request', req);

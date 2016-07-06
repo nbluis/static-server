@@ -32,6 +32,7 @@ describe('StaticServer test', function () {
     assert.equal(testServer.name, undefined);
     assert.equal(testServer.host, undefined);
     assert.equal(testServer.port, undefined);
+    assert.equal(testServer.cors, undefined);
 
     testServer.followSymlink.should.be.false;
     testServer.index.should.equal('index.html');
@@ -39,7 +40,7 @@ describe('StaticServer test', function () {
     testServer.should.have.ownProperty('_socket');
   });
 
-  it('should handle 404 requests', function (done) {
+  it('should handle 403 requests', function (done) {
     request(testServer._socket)
       .get('/')
       .expect(403)
@@ -145,6 +146,23 @@ describe('StaticServer test', function () {
     it('should follow');
 
   });
+
+  describe('setting \'cors\' option', function () {
+      before(function (done) {
+        var opt = serverOptions
+        opt.cors = '*'
+        testServer = new Server(opt);
+        testServer.start(done);
+      })
+
+      it('should set Access-Control-Allow-Origin', function (done) {
+        request(testServer._socket)
+          .get('/test.js')
+          .expect(200)
+          .expect('Access-Control-Allow-Origin', '*')
+          .end(done)
+      });
+  })
 
 
 });
