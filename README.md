@@ -55,7 +55,7 @@ server.on('symbolicLink', function (link, file) {
   console.log('File', link, 'is a link to', file);
 });
 
-server.on('response', function (req, res, err, stat, file) {
+server.on('response', function (req, res, err, file, stat) {
   // res.status is the response status sent to the client
   // res.headers are the headers sent
   // err is any error message thrown
