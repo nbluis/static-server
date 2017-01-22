@@ -325,7 +325,7 @@ function validateClientCache(server, req, res, stat) {
   }
 }
 
-function parseRanges(req, size) {
+function parseRanges(req, res, size) {
   var ranges;
   var start;
   var end;
@@ -443,7 +443,7 @@ will be read and the error will be sent to stderr
 */
 function sendFile(server, req, res, stat, file) {
   var headersSent = false;
-  var contentParts = parseRanges(req, stat.size);
+  var contentParts = parseRanges(req, res, stat.size);
   var streamOptions = { flags: 'r' };
   var contentType = mime.lookup(file);
   var rangeIndex = 0;
