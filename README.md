@@ -71,5 +71,8 @@ server.on('response', function (req, res, err, file, stat) {
 * _Can this server run php, ruby, python or any other cgi script?_ **No.**
 * _Is this server ready to receive thousands of requests?_ **Preferably not.**
 
+## Contributors
+An special thank you to [all contributors](https://github.com/nbluis/static-server/graphs/contributors) who allow this project to continue to evolve.
+
 ## License
 [The MIT License (MIT)](http://creativecommons.org/licenses/MIT/)
