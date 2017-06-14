@@ -5,6 +5,7 @@ const DEFAULT_INDEX = 'index.html';
 const DEFAULT_FOLLOW_SYMLINKS = false;
 const DEFAULT_DEBUG = false;
 const DEFAULT_ERROR_404 = undefined;
+const DEFAULT_CORS = undefined;
 
 
 var path    = require("path");
@@ -29,6 +30,7 @@ program
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
   .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
+  .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
   .parse(process.argv);
 ;
 
