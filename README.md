@@ -18,6 +18,7 @@ A simple http server to serve static resource files from a local directory.
     -f, --follow-symlink       follow links, otherwise fail with file not found
     -d, --debug                enable to show error messages
     -n, --not-found <filename> the error 404 file
+    -c, --cors <pattern>       Cross Origin Pattern. Use "*" to allow all origins
 
 ## Using as a node module
 
