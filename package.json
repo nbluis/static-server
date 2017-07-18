@@ -1,7 +1,7 @@
 {
   "name": "static-server",
   "description": "A simple http server to serve static resource files from a local directory.",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "author": "Eduardo Bohrer <nbluisrs@gmail.com>",
   "keywords": [
     "static",
@@ -31,10 +31,7 @@
     "file-size": "0.0.5",
     "mime": "^1.2.11"
   },
-  "license": {
-    "type": "MIT",
-    "url": "http://creativecommons.org/licenses/MIT/"
-  },
+  "license": "MIT",
   "devDependencies": {
     "istanbul": "^0.3.0",
     "mocha": "^1.21.4",
