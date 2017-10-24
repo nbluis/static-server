@@ -128,7 +128,7 @@ Return the server's request handler function
 */
 function requestHandler(server) {
   return function handler(req, res) {
-    var uri = req.path = url.parse(req.url).pathname;
+    var uri = req.path = decodeURIComponent(url.parse(req.url).pathname);
     var filename = path.join(server.rootPath, uri);
     var timestamp = process.hrtime();
 
