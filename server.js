@@ -53,6 +53,7 @@ Options are :
    - templates
       - index      the default index file to server for a directory (default 'index.html')
       - notFound   the 404 error template
+   - noCache       disables 304 responses
 
 @param options {Object}
 */
@@ -77,6 +78,8 @@ function StaticServer(options) {
     'index': (options.templates.index || DEFAULT_INDEX),
     'notFound': options.templates.notFound
   };
+  // the arguments parser converts `--no-XXXX` to `XXXX` with a value of false;
+  this.noCache = !options.cache;
 
   if (options.index) {
     console.log("options.index is now deprecated please use options.templates.index instead.");
@@ -292,6 +295,8 @@ function validateClientCache(server, req, res, stat) {
   var mtime         = stat.mtime.getTime();
   var clientETag  = req.headers['if-none-match'];
   var clientMTime = Date.parse(req.headers['if-modified-since']);
+
+  if (server.noCache) return false;
 
   if ((clientMTime  || clientETag) &&
       (!clientETag  || clientETag === res.headers['Etag']) &&
