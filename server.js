@@ -457,9 +457,12 @@ function sendFile(server, req, res, stat, file) {
     return;  // ranges failed, abort
   }
 
-  res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
+  if (!server.noCache) {
+    res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
+    res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
+  }
+
   res.headers['Date']           = new Date().toUTCString();
-  res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
 
   if (contentParts.ranges && contentParts.ranges.length > 1) {
     res.headers['Content-Type'] = 'multipart/byteranges; boundary=' + MULTIPART_SEPARATOR;
