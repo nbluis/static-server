@@ -1,7 +1,7 @@
 {
   "name": "static-server",
   "description": "A simple http server to serve static resource files from a local directory.",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "author": "Eduardo Bohrer <nbluisrs@gmail.com>",
   "keywords": [
     "static",
@@ -23,7 +23,7 @@
     "test-travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly"
   },
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">=4"
   },
   "dependencies": {
     "chalk": "^0.5.1",
