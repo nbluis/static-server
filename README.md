@@ -19,6 +19,7 @@ A simple http server to serve static resource files from a local directory.
     -d, --debug                enable to show error messages
     -n, --not-found <filename> the error 404 file
     -c, --cors <pattern>       Cross Origin Pattern. Use "*" to allow all origins
+    -z, --no-nocache           disable cache (http 304) responses.
 
 ## Using as a node module
 

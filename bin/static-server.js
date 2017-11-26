@@ -32,7 +32,7 @@ program
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)
   .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
   .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
-  .option('-z, --no-cache', 'disables 304 responses', DEFAULT_CACHE)
+  .option('-z, --no-cache', 'disable cache (http 304) responses', DEFAULT_CACHE)
   .parse(process.argv);
 ;
 
