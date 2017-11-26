@@ -53,6 +53,7 @@ Options are :
    - templates
       - index      the default index file to server for a directory (default 'index.html')
       - notFound   the 404 error template
+   - noCache       disables 304 responses
 
 @param options {Object}
 */
@@ -77,6 +78,8 @@ function StaticServer(options) {
     'index': (options.templates.index || DEFAULT_INDEX),
     'notFound': options.templates.notFound
   };
+  // the arguments parser converts `--no-XXXX` to `XXXX` with a value of false;
+  this.noCache = !options.cache;
 
   if (options.index) {
     console.log("options.index is now deprecated please use options.templates.index instead.");
@@ -293,6 +296,8 @@ function validateClientCache(server, req, res, stat) {
   var clientETag  = req.headers['if-none-match'];
   var clientMTime = Date.parse(req.headers['if-modified-since']);
 
+  if (server.noCache) return false;
+
   if ((clientMTime  || clientETag) &&
       (!clientETag  || clientETag === res.headers['Etag']) &&
       (!clientMTime || clientMTime >= mtime)) {
@@ -452,9 +457,12 @@ function sendFile(server, req, res, stat, file) {
     return;  // ranges failed, abort
   }
 
-  res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
+  if (!server.noCache) {
+    res.headers['Etag']           = JSON.stringify([stat.ino, stat.size, stat.mtime.getTime()].join('-'));
+    res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
+  }
+
   res.headers['Date']           = new Date().toUTCString();
-  res.headers['Last-Modified']  = new Date(stat.mtime).toUTCString();
 
   if (contentParts.ranges && contentParts.ranges.length > 1) {
     res.headers['Content-Type'] = 'multipart/byteranges; boundary=' + MULTIPART_SEPARATOR;
