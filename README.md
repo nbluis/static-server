@@ -20,6 +20,7 @@ A simple http server to serve static resource files from a local directory.
     -n, --not-found <filename> the error 404 file
     -c, --cors <pattern>       Cross Origin Pattern. Use "*" to allow all origins
     -z, --no-nocache           disable cache (http 304) responses.
+    -o, --open                 open server in the local browser
 
 ## Using as a node module
 
