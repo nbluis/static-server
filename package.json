@@ -29,7 +29,8 @@
     "chalk": "^0.5.1",
     "commander": "^2.3.0",
     "file-size": "0.0.5",
-    "mime": "^1.2.11"
+    "mime": "^1.2.11",
+    "opn": "^5.2.0"
   },
   "license": "MIT",
   "devDependencies": {

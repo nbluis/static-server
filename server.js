@@ -30,6 +30,7 @@ var url          = require('url');
 var mime         = require('mime');
 var path         = require('path');
 var fs           = require('fs');
+var opn          = require('opn');
 var slice        = Array.prototype.slice;
 
 
@@ -54,6 +55,7 @@ Options are :
       - index      the default index file to server for a directory (default 'index.html')
       - notFound   the 404 error template
    - noCache       disables 304 responses
+   - open          open server in the local browser
 
 @param options {Object}
 */
@@ -80,6 +82,7 @@ function StaticServer(options) {
   };
   // the arguments parser converts `--no-XXXX` to `XXXX` with a value of false;
   this.noCache = !options.cache;
+  this.open = options.open
 
   if (options.index) {
     console.log("options.index is now deprecated please use options.templates.index instead.");
@@ -109,6 +112,9 @@ Start listening on the given host:port
 */
 StaticServer.prototype.start = function start(callback) {
   this._socket = http.createServer(requestHandler(this)).listen(this.port, this.host, callback);
+  if(this.open && this.port){
+    opn('http://localhost:' + this.port);
+  }
 }
 
 

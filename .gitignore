@@ -12,3 +12,4 @@ lib-cov
 npm-debug.log
 coverage
 node_modules
+.DS_Store
