@@ -7,6 +7,7 @@ const DEFAULT_DEBUG = false;
 const DEFAULT_ERROR_404 = undefined;
 const DEFAULT_CORS = undefined;
 const DEFAULT_CACHE = true;
+const DEFAULT_OPEN = false;
 
 
 var path    = require("path");
@@ -33,6 +34,7 @@ program
   .option('-n, --not-found <filename>', 'the file not found template', addNotFoundTemplate, DEFAULT_ERROR_404)
   .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
   .option('-z, --no-cache', 'disable cache (http 304) responses', DEFAULT_CACHE)
+  .option('-o, --open', 'open server in the local browser', DEFAULT_OPEN)
   .parse(process.argv);
 ;
 
