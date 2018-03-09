@@ -10,10 +10,12 @@ const DEFAULT_CACHE = true;
 const DEFAULT_OPEN = false;
 
 
-var path    = require("path");
-var fsize   = require('file-size');
-var program = require('commander');
-var chalk   = require('chalk');
+var path     = require("path");
+var fsize    = require('file-size');
+var program  = require('commander');
+var chalk    = require('chalk');
+var readline = require('readline');
+
 
 var pkg     = require(path.join(__dirname, '..', 'package.json'));
 
@@ -48,7 +50,25 @@ server = new StaticServer(program);
 server.start(function () {
   console.log(chalk.blue('*'), 'Static server successfully started.');
   console.log(chalk.blue('*'), 'Serving files at:', chalk.cyan('http://localhost:' + program.port));
-  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'to shutdown.');
+  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'or', chalk.yellow.bold('q'), 'to shutdown.');
+  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('o'), 'to open in a browser.');
+
+  readline.emitKeypressEvents(process.stdin);
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+  }
+
+  process.stdin.on('keypress', (str, key) => {
+    if (key.ctrl && key.name === 'c') {
+      process.emit("SIGINT");
+    }
+    if (key.name === 'q') {
+      process.exit();
+    }
+    if (key.name === 'o') {
+      server.openInBrowser();
+    }
+  })
 
   return server;
 });
@@ -89,17 +109,6 @@ Prepare the 'exit' handler for the program termination
 */
 function initTerminateHandlers() {
   var readLine;
-
-  if (process.platform === "win32"){
-    readLine = require("readline");
-
-    readLine.createInterface ({
-      input: process.stdin,
-      output: process.stdout
-    }).on("SIGINT", function () {
-      process.emit("SIGINT");
-    });
-  }
 
   // handle INTERRUPT (CTRL+C) and TERM/KILL signals
   process.on('exit', function () {

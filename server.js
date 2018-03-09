@@ -113,10 +113,16 @@ Start listening on the given host:port
 StaticServer.prototype.start = function start(callback) {
   this._socket = http.createServer(requestHandler(this)).listen(this.port, this.host, callback);
   if(this.open && this.port){
-    opn('http://localhost:' + this.port);
+    this.openInBrowser();
   }
 }
 
+/**
+Open a browser and point to the server
+*/
+StaticServer.prototype.openInBrowser = function openInBrowser() {
+  opn('http://localhost:' + this.port);
+}
 
 /**
 Stop listening
