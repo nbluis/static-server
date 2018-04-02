@@ -158,7 +158,7 @@ function requestHandler(server) {
       res.headers['Access-Control-Allow-Origin'] = server.cors;
     }
 
-    server.emit('request', req);
+    server.emit('request', req, res);
 
     if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
       return sendError(server, req, res, null, HTTP_STATUS_INVALID_METHOD);
