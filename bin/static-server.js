@@ -61,6 +61,14 @@ server.start(function () {
   console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'to shutdown.');
 
   return server;
+}, function (e) {
+  if('EADDRINUSE'!==e.code){
+  	throw e;
+  }
+  console.log(chalk.blue.bold('!'), 'Port', chalk.yellow.bold(program.port), 'already in use.');
+  console.log(chalk.blue('*'), 'You could try the next port using:', chalk.green.bold(cmdSetPort(1+parseInt(program.port))));
+ 
+  process.exit(1);
 });
 
 function log(){
@@ -120,7 +128,7 @@ function initTerminateHandlers() {
   // handle INTERRUPT (CTRL+C) and TERM/KILL signals
   process.on('exit', function () {
     if (server) {
-      console.log(chalk.blue('*'), 'Shutting down server');
+      console.log(chalk.blue('*'), 'Shutting down static server');
       server.stop();
     }
     console.log();  // extra blank line
@@ -141,4 +149,28 @@ function addNotFoundTemplate(v){
 
 function addIndexTemplate(v){
   templates.index = v;
+}
+
+function cmdSetPort(port){
+  var cmd = process.argv.slice(1);
+
+  // Isolate executing command from full path
+  cmd[0] = cmd[0].match(/[^\\\/]+$/)[0]; 	 
+  
+  // Edit existing port parameter
+  var found = false;
+  for(var i=0; i<cmd.length; i++){
+    if(cmd[i].match(/^(-p|--port)$/i)){
+    	cmd[++i] = port;
+		found = true;
+    }
+  }
+
+  // Add port parameter of not set already
+  if(!found){
+  	cmd.push('--port');
+  	cmd.push(port);
+  }
+
+  return cmd.join(' ');
 }

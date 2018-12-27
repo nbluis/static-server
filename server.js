@@ -110,8 +110,12 @@ Start listening on the given host:port
 
 @param callback {Function}    the function to call once the server is ready
 */
-StaticServer.prototype.start = function start(callback) {
-  this._socket = http.createServer(requestHandler(this)).listen(this.port, this.host, callback);
+StaticServer.prototype.start = function start(callback, onError) {
+  onError = onError || function(e){throw e};
+  this._socket = http.createServer(requestHandler(this))
+    .listen(this.port, this.host, callback)
+    .on('error', onError);
+
   if(this.open && this.port){
     opn('http://localhost:' + this.port);
   }
