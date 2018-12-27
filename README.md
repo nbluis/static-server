@@ -4,23 +4,30 @@
 A simple http server to serve static resource files from a local directory.
 
 ## Getting started
-* [Install node.js](http://nodejs.org/download/)
-* Install npm package globally `npm -g install static-server`
-* Go to the folder you want to serve
-* Run the server `static-server`
+* Make sure you have [node.js](http://nodejs.org/download/) installed
+* Install this npm package globally `npm -g install static-server`
+* Go to the folder you want to serve and run the command `static-server`
+* Open [http://localhost:8090](http://localhost:8090) to see the result
 
-## Options
 
-    -h, --help                 output usage information
-    -V, --version              output the version number
-    -p, --port <n>             the port to listen to for incoming HTTP connections
-    -i, --index <filename>     the default index file if not specified
-    -f, --follow-symlink       follow links, otherwise fail with file not found
-    -d, --debug                enable to show error messages
-    -n, --not-found <filename> the error 404 file
-    -c, --cors <pattern>       Cross Origin Pattern. Use "*" to allow all origins
-    -z, --no-cache           disable cache (http 304) responses.
-    -o, --open                 open server in the local browser
+
+## Using from the command line
+
+	static-server [options] <root_dir>
+
+	-V, --version               output the version number
+	-p, --port <n>              the port to listen to for incoming HTTP connections (default: 9080)
+	-i, --index <filename>      the default index file if not index.html 
+	-f, --follow-symlink        follow links, otherwise fail with file not found
+	-d, --debug                 display error messages
+	-n, --not-found <filename>  file to serve if url not found
+	-c, --cors <pattern>        Cross Origin Pattern. Use "*" to allow all origins
+	-z, --no-cache              disable cache (http 304) responses
+	-o, --open                  open server in the local browser
+	-q, --quiet                 suppress output about URL requests
+	-h, --help                  display this information
+
+Default root_dir is current directory
 
 ## Using as a node module
 
