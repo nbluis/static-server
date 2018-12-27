@@ -8,6 +8,7 @@ const DEFAULT_ERROR_404 = undefined;
 const DEFAULT_CORS = undefined;
 const DEFAULT_CACHE = true;
 const DEFAULT_OPEN = false;
+const DEFAULT_QUIET = false;
 
 
 var path    = require("path");
@@ -35,6 +36,7 @@ program
   .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
   .option('-z, --no-cache', 'disable cache (http 304) responses', DEFAULT_CACHE)
   .option('-o, --open', 'open server in the local browser', DEFAULT_OPEN)
+  .option('-q, --quiet', 'suppress output about URL requests', DEFAULT_QUIET)
   .parse(process.argv);
 ;
 
@@ -53,12 +55,18 @@ server.start(function () {
   return server;
 });
 
+function log(){
+  if(!program.quiet){
+    console.log.apply(null, arguments);
+  } 
+}
+
 server.on('request', function (req, res) {
-  console.log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), req.path);
+  log(chalk.gray('<--'), chalk.blue('[' + req.method + ']'), req.path);
 });
 
 server.on('symbolicLink', function (link, file) {
-  console.log(chalk.cyan('---'), '"' + path.relative(server.rootPath, link) + '"', chalk.magenta('>'), '"' + path.relative(server.rootPath, file) + '"');
+  log(chalk.cyan('---'), '"' + path.relative(server.rootPath, link) + '"', chalk.magenta('>'), '"' + path.relative(server.rootPath, file) + '"');
 });
 
 server.on('response', function (req, res, err, file, stat) {
@@ -66,14 +74,14 @@ server.on('response', function (req, res, err, file, stat) {
   var nrmFile;
 
   if (res.status >= 400) {
-    console.log(chalk.gray('-->'), chalk.red(res.status), req.path, '(' + req.elapsedTime + ')');
+    log(chalk.gray('-->'), chalk.red(res.status), req.path, '(' + req.elapsedTime + ')');
   } else if (file) {
     relFile = path.relative(server.rootPath, file);
     nrmFile = path.normalize(req.path.substring(1));
 
-    console.log(chalk.gray('-->'), chalk.green(res.status, StaticServer.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + req.elapsedTime + ')');
+    log(chalk.gray('-->'), chalk.green(res.status, StaticServer.STATUS_CODES[res.status]), req.path + (nrmFile !== relFile ? (' ' + chalk.dim('(' + relFile + ')')) : ''), fsize(stat.size).human(), '(' + req.elapsedTime + ')');
   } else {
-    console.log(chalk.gray('-->'), chalk.green.dim(res.status, StaticServer.STATUS_CODES[res.status]), req.path, '(' + req.elapsedTime + ')');
+    log(chalk.gray('-->'), chalk.green.dim(res.status, StaticServer.STATUS_CODES[res.status]), req.path, '(' + req.elapsedTime + ')');
   }
 
   if (err && server.debug) {
