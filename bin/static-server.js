@@ -48,10 +48,10 @@ program.templates = templates;
 server = new StaticServer(program);
 
 server.start(function () {
-  console.log(chalk.blue('*'), 'Static server successfully started.');
+  console.log(chalk.blue('*'), 'Static server successfully started');
   console.log(chalk.blue('*'), 'Serving files at:', chalk.cyan('http://localhost:' + program.port));
-  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('Ctrl+C'), 'or', chalk.yellow.bold('q'), 'to shutdown.');
-  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('o'), 'to open in a browser.');
+  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('o'), 'to open', chalk.cyan('http://localhost:' + program.port));
+  console.log(chalk.blue('*'), 'Press', chalk.yellow.bold('q'), 'to exit');
 
   readline.emitKeypressEvents(process.stdin);
   if (process.stdin.isTTY) {
@@ -62,10 +62,10 @@ server.start(function () {
     if (key.ctrl && key.name === 'c') {
       process.emit("SIGINT");
     }
-    if (key.name === 'q') {
+    if (key.name === 'q' || key.name === 'Q') {
       process.exit();
     }
-    if (key.name === 'o') {
+    if (key.name === 'o' || key.name === 'O') {
       server.openInBrowser();
     }
   })
