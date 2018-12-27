@@ -27,16 +27,16 @@
   },
   "dependencies": {
     "chalk": "^0.5.1",
-    "commander": "^2.3.0",
+    "commander": "^2.19.0",
     "file-size": "0.0.5",
-    "mime": "^1.2.11",
-    "opn": "^5.2.0"
+    "mime": "^1.6.0",
+    "opn": "^5.4.0"
   },
   "license": "MIT",
   "devDependencies": {
-    "istanbul": "^0.3.0",
-    "mocha": "^4.0.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^4.1.0",
     "should": "^4.0.4",
-    "supertest": "^0.15.0"
+    "supertest": "^3.3.0"
   }
 }
