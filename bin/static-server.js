@@ -8,7 +8,7 @@ const DEFAULT_ERROR_404 = undefined;
 const DEFAULT_CORS = undefined;
 const DEFAULT_CACHE = true;
 const DEFAULT_OPEN = false;
-const DEFAULT_QUIET = false;
+const DEFAULT_SILENT = false;
 
 
 var path    = require("path");
@@ -39,7 +39,7 @@ program
   .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
   .option('-z, --no-cache', 'disable cache (http 304) responses', DEFAULT_CACHE)
   .option('-o, --open', 'open server in the local browser', DEFAULT_OPEN)
-  .option('-q, --quiet', 'suppress output about URL requests', DEFAULT_QUIET)
+  .option('-s, --silent', 'suppress output about URL requests', DEFAULT_SILENT)
   .parse(process.argv);
 ;
 
@@ -53,8 +53,8 @@ server = new StaticServer(program);
 
 server.start(function () {
   var msg = 'Static server successfully started.';
-  if(program.quiet){
-    msg = 'Static server successfully started in quiet mode.';
+  if(program.silent){
+    msg = 'Static server successfully started in silent mode.';
   }
   console.log(chalk.blue('*'), msg);
   console.log(chalk.blue('*'), 'Serving files at:', chalk.cyan('http://localhost:' + program.port));
@@ -72,7 +72,7 @@ server.start(function () {
 });
 
 function log(){
-  if(!program.quiet){
+  if(!program.silent){
     console.log.apply(null, arguments);
   } 
 }
@@ -166,7 +166,7 @@ function cmdSetPort(port){
     }
   }
 
-  // Add port parameter of not set already
+  // Add port parameter if not set already
   if(!found){
   	cmd.push('--port');
   	cmd.push(port);

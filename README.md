@@ -24,7 +24,7 @@ A simple http server to serve static resource files from a local directory.
 	-c, --cors <pattern>        Cross Origin Pattern. Use "*" to allow all origins
 	-z, --no-cache              disable cache (http 304) responses
 	-o, --open                  open server in the local browser
-	-q, --quiet                 suppress output about URL requests
+	-s, --silent                suppress output about URL requests
 	-h, --help                  display this information
 
 Default root_dir is current directory
