@@ -10,6 +10,7 @@
     "assets"
   ],
   "main": "./server.js",
+  "typings": "server.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com:nbluis/static-server.git"
