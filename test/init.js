@@ -1,3 +1,3 @@
 
 // setting globals
-GLOBAL.assert = global.assert = require('assert');
+global.assert = require('assert');
