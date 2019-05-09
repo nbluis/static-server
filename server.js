@@ -266,7 +266,7 @@ function getFileStats(server, files, callback) {
               if (!path.isAbsolute(fileRef)) {
                 fileRef = path.join( path.dirname(file), fileRef );
               }
-              server.emit('symbolicLink', fileRef);
+              server.emit('symbolicLink', file, fileRef);
               next(fileRef, index);
             }
           });
