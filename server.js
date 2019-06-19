@@ -26,6 +26,7 @@ const NEWLINE = '\n';
 var EventEmitter = require('events').EventEmitter;
 var util         = require('util');
 var http         = require('http');
+var https        = require('https');
 var url          = require('url');
 var mime         = require('mime');
 var path         = require('path');
@@ -44,18 +45,22 @@ module.exports = StaticServer;
 Create a new instance of StaticServer class
 
 Options are :
-   - name          the server name, what will be sent as "X-Powered-by"
-   - host          the host interface where the server will listen to. If not specified,
-                   the server will listen on any networking interfaces
-   - cors          a cors header, will be sent as "Access-Control-Allow-Origin",
-   - port          the listening port number
-   - rootPath      the serving root path. Any file above that path will be denied
-   - followSymlink true to follow any symbolic link, false to forbid
+   - name           the server name, what will be sent as "X-Powered-by"
+   - host           the host interface where the server will listen to. If not specified,
+                    the server will listen on any networking interfaces
+   - cors           a cors header, will be sent as "Access-Control-Allow-Origin",
+   - port           the listening port number
+   - rootPath       the serving root path. Any file above that path will be denied
+   - followSymlink  true to follow any symbolic link, false to forbid
    - templates
-      - index      the default index file to server for a directory (default 'index.html')
-      - notFound   the 404 error template
-   - noCache       disables 304 responses
-   - open          open server in the local browser
+      - index       the default index file to server for a directory (default 'index.html')
+      - notFound    the 404 error template
+   - noCache        disables 304 responses
+   - open           open server in the local browser
+   - useSsl         use SSL certificate
+   - httpsPort      listening port for HTTPS
+   - sslCertificate path to SSL certificate
+   - sslPrivateKey  path to SSL private key
 
 @param options {Object}
 */
@@ -84,12 +89,25 @@ function StaticServer(options) {
   this.noCache = !options.cache;
   this.open = options.open
 
+  // HTTPS options
+  this.useSSL = options.useSsl;
+  this.SSLCertificate = options.sslCertificate;
+  this.SSLPrivateKey = options.sslPrivatekey;
+  this.HTTPSPort = options.httpsPort;
+
   if (options.index) {
     console.log("options.index is now deprecated please use options.templates.index instead.");
     this.templates.index = options.index;
   }
 
   Object.defineProperty(this, '_socket', {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value: null
+  });
+
+  Object.defineProperty(this, '_socketSSL', {
     configurable: true,
     enumerable: false,
     writable: true,
@@ -111,7 +129,18 @@ Start listening on the given host:port
 @param callback {Function}    the function to call once the server is ready
 */
 StaticServer.prototype.start = function start(callback) {
+
   this._socket = http.createServer(requestHandler(this)).listen(this.port, this.host, callback);
+
+  if(this.useSSL){
+    //Setup Secure server
+    var privateKey = fs.readFileSync(this.SSLPrivateKey).toString();
+    var certificate = fs.readFileSync(this.SSLCertificate).toString();
+    var credentials = {key: privateKey, cert: certificate};
+
+    this._socketSSL = https.createServer(credentials, requestHandler(this)).listen(this.HTTPSPort, this.host);
+  }
+
   if(this.open && this.port){
     opn('http://localhost:' + this.port);
   }
@@ -125,6 +154,10 @@ StaticServer.prototype.stop = function stop() {
   if (this._socket) {
     this._socket.close();
     this._socket = null;
+  }
+  if (this._socketSSL) {
+    this._socketSSL.close();
+    this._socketSSL = null;
   }
 }
 
