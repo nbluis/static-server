@@ -48,4 +48,21 @@ interface StaticServerConfiguration {
      */
     notFound?: string;
   };
+
+  /**
+   * Enables HTTPS
+   */
+  useSsl?: boolean;
+  /**
+   * HTTPS port to use
+   */
+  httpsPort?: number;
+  /**
+   * Path to SSL certificate
+   */
+  sslCertificate?: string;
+  /**
+   * Path to SSL Private key
+   */
+  sslPrivatekey?: string;
 }

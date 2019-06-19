@@ -8,6 +8,10 @@ const DEFAULT_ERROR_404 = undefined;
 const DEFAULT_CORS = undefined;
 const DEFAULT_CACHE = true;
 const DEFAULT_OPEN = false;
+const DEFAULT_SSL = false;
+const DEFAULT_HTTPS_PORT = 9443;
+const DEFAULT_SSL_CERTIFICATE = "certificate.pem";
+const DEFAULT_SSL_PRIVATEKEY = "privatekey.pem";
 
 
 var path    = require("path");
@@ -35,6 +39,10 @@ program
   .option('-c, --cors <pattern>', 'Cross Origin Pattern. Use "*" to allow all origins', DEFAULT_CORS)
   .option('-z, --no-cache', 'disable cache (http 304) responses', DEFAULT_CACHE)
   .option('-o, --open', 'open server in the local browser', DEFAULT_OPEN)
+  .option('--use-ssl', 'use SSL certificate', DEFAULT_SSL)
+  .option('--https-port <n>', 'the port to listen to for incoming HTTPS connections', DEFAULT_HTTPS_PORT)
+  .option('--ssl-certificate <filename>', 'the SSL certificate to use', DEFAULT_SSL_CERTIFICATE)
+  .option('--ssl-privatekey <filename>', 'the SSL private key to use', DEFAULT_SSL_PRIVATEKEY)
   .parse(process.argv);
 ;
 
