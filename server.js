@@ -137,6 +137,15 @@ Return the server's request handler function
 */
 function requestHandler(server) {
   return function handler(req, res) {
+    var originalUrl = req.url;
+  
+    server.emit('intercept', req, res);
+
+    if (req.handled) {
+      return;
+    }
+
+    var urlModified = req.url !== originalUrl;
     var uri = req.path = decodeURIComponent(url.parse(req.url).pathname);
     var filename = path.join(server.rootPath, uri);
     var timestamp = process.hrtime();
@@ -162,7 +171,7 @@ function requestHandler(server) {
 
     if (VALID_HTTP_METHODS.indexOf(req.method) === -1) {
       return sendError(server, req, res, null, HTTP_STATUS_INVALID_METHOD);
-    } else if (!validPath(server.rootPath, filename)) {
+    } else if (!urlModified && !validPath(server.rootPath, filename)) {
       return sendError(server, req, res, null, HTTP_STATUS_FORBIDDEN);
     }
 

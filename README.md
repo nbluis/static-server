@@ -47,6 +47,13 @@ server.start(function () {
   console.log('Server listening to', server.port);
 });
 
+server.on('intercept', function (req, res) {
+  // The request `req` can be modified here before being processed,
+  // such as by modifying `req.url`.
+  // Set `req.handled` to `true` to fully handle the request here
+  // instead of responding with a static file.
+});
+
 server.on('request', function (req, res) {
   // req.path is the URL resource (file name) from server.rootPath
   // req.elapsedTime returns a string of the request's elapsed time
