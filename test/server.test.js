@@ -89,41 +89,43 @@ describe('StaticServer test', function () {
   });
 
   it('should handle intercept path redirect', function (done) {
-    var intercept = function (req) {
-      req.url = '/test.html'
-    };
+    var testServer = new Server(serverOptions);
+    testServer.start(function () {
+      var intercept = function (req) {
+        req.url = '/test.html'
+      };
 
-    testServer.on('intercept', intercept);
+      testServer.on('intercept', intercept);
 
-    request(testServer._socket)
-      .get('/foo.html')
-      .expect(200)
-      .end(function (err) {
-        testServer.off('intercept', intercept);
-        done(err);
-      })
-    ;
+      request(testServer._socket)
+        .get('/foo.html')
+        .expect(200)
+        .end(function (err) {
+          done(err);
+        });
+      });
   });
 
   it('should handle intercept takeover', function (done) {
-    var intercept = function (req, res) {
-      req.handled = true;
-      res.writeHead(200);
-      res.write('intercepted!');
-      res.end();
-    };
+    var testServer = new Server(serverOptions);
+    testServer.start(function () {
+      var intercept = function (req, res) {
+        req.handled = true;
+        res.writeHead(200);
+        res.write('intercepted!');
+        res.end();
+      };
 
-    testServer.on('intercept', intercept);
+      testServer.on('intercept', intercept);
 
-    request(testServer._socket)
-      .get('/anything')
-      .expect(200)
-      .expect('intercepted!')
-      .end(function (err) {
-        testServer.off('intercept', intercept);
-        done(err);
-      })
-    ;
+      request(testServer._socket)
+        .get('/anything')
+        .expect(200)
+        .expect('intercepted!')
+        .end(function (err) {
+          done(err);
+        });
+      });
   });
 
   it('should accept HEAD requests');
