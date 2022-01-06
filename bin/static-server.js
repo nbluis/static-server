@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const DEFAULT_PORT = 9080;
+const DEFAULT_HOST = undefined;
 const DEFAULT_INDEX = 'index.html';
 const DEFAULT_FOLLOW_SYMLINKS = false;
 const DEFAULT_DEBUG = false;
@@ -28,6 +29,7 @@ program
   .version(pkg.name + '@' + pkg.version)
   .usage('[options] <root_path>')
   .option('-p, --port <n>', 'the port to listen to for incoming HTTP connections', DEFAULT_PORT)
+  .option('-a, --host <address>', 'the host address to bind to, defaults to all', DEFAULT_HOST)
   .option('-i, --index <filename>', 'the default index file if not specified', addIndexTemplate, DEFAULT_INDEX)
   .option('-f, --follow-symlink', 'follow links, otherwise fail with file not found', DEFAULT_FOLLOW_SYMLINKS)
   .option('-d, --debug', 'enable to show error messages', DEFAULT_DEBUG)

@@ -14,12 +14,13 @@ A simple http server to serve static resource files from a local directory.
     -h, --help                 output usage information
     -V, --version              output the version number
     -p, --port <n>             the port to listen to for incoming HTTP connections
+    -a, --host <address>       the host address to bind to, defaults to all
     -i, --index <filename>     the default index file if not specified
     -f, --follow-symlink       follow links, otherwise fail with file not found
     -d, --debug                enable to show error messages
     -n, --not-found <filename> the error 404 file
     -c, --cors <pattern>       Cross Origin Pattern. Use "*" to allow all origins
-    -z, --no-cache           disable cache (http 304) responses.
+    -z, --no-cache             disable cache (http 304) responses.
     -o, --open                 open server in the local browser
 
 ## Using as a node module
