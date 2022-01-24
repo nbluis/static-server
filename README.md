@@ -1,6 +1,26 @@
 [![Build Status](https://secure.travis-ci.org/nbluis/static-server.svg?branch=master)](http://travis-ci.org/nbluis/static-server)
 
-# Node static server
+# Static-server has been retired 🌅
+
+The static-server project started in mid-2014 when node.js didn't even have a stable version (node.js 0.8 Oo). It was born from a personal need that I had to serve static files locally to be able to work with browser APIs that do not allow access through the file protocol.
+
+It's amazing to see the scale it's taken and it just reinforces how open-source communities can build amazing tools together.
+
+But in recent years I've been quite distant from this and many other projects that I contributed for personal reasons. Still, many people keep trying to take it forward and this makes me incredibly happy but at the same time sad because I haven't been able to give the project the attention it deserves and I apologize for that.
+
+Given this scenario and understanding that our community needs projects with obstinate and active people to maintain them, I decided to retire it.
+
+It will be available forever both on github and in already published NPM packages but no new versions will be distributed.
+
+If you are a static-server user and are interested in continuing the project, I suggest you fork it. If you do, please open a pull-request on this project so that we can create a list of kept forks of it in case other users are interested in migrating.
+
+I thank all the people who helped us to build it, especially @yanickrochon who was present all the time and worked a lot on its evolution.
+
+It was a great time and I had a lot of fun, thank you node.js community.
+
+Sincerely @nbluis.
+
+## Node static server
 A simple http server to serve static resource files from a local directory.
 
 ## Getting started
