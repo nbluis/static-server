@@ -14,7 +14,7 @@ It will be available forever both on github and in already published NPM package
 
 If you are a static-server user and are interested in continuing the project, I suggest you fork it. If you do, please open a pull-request on this project so that we can create a list of kept forks of it in case other users are interested in migrating.
 
-I thank all the people who helped us to build it, especially @yanickrochon who was present all the time and worked a lot on its evolution.
+I thank all the people who helped us to build it, especially [@yanickrochon](https://github.com/yanickrochon) who was present all the time and worked a lot on its evolution.
 
 It was a great time and I had a lot of fun, thank you node.js community.
 
